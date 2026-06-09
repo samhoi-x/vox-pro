@@ -10,6 +10,7 @@ export interface Exercise {
   steps: string[];
   commonMistakes: string[];
   verification: string;
+  videoUrl?: string;
 }
 
 export interface DayContent {
@@ -21,6 +22,7 @@ export interface DayContent {
   solution: string;
   review?: string;
   warmup: string[];
+  warmupVideos?: { label: string; url: string }[];
   exercises: Exercise[];
   schedule: { time: string; content: string }[];
   totalTime: string;
@@ -90,6 +92,7 @@ const EXERCISE_1: Exercise = {
     '吐氣時氣息一下子衝出來 → 均勻、穩定地釋放',
   ],
   verification: '能穩定地用「嘶～」聲吐氣 16 秒以上。',
+  videoUrl: 'https://www.youtube.com/watch?v=4QeBQkK9Rxw',
 };
 
 const EXERCISE_2: Exercise = {
@@ -105,6 +108,7 @@ const EXERCISE_2: Exercise = {
     '用喉嚨擠壓控制氣息 → 用橫膈膜（肚子）控制',
   ],
   verification: '紙巾貼牆 20 秒不掉；火焰持續傾斜 20 秒不熄滅。',
+  videoUrl: 'https://www.youtube.com/watch?v=QDGd2hFzSVI',
 };
 
 const EXERCISE_3: Exercise = {
@@ -120,6 +124,7 @@ const EXERCISE_3: Exercise = {
     '長音時氣息越來越弱 → 保持橫膈膜持續支撐',
   ],
   verification: '跳音清晰有力，每個音之間有明顯的斷開；長音平穩不抖。',
+  videoUrl: 'https://www.youtube.com/watch?v=9GgHlBYUQyI',
 };
 
 const EXERCISE_4: Exercise = {
@@ -136,6 +141,7 @@ const EXERCISE_4: Exercise = {
     '唱低音時喉頭往上跑 → 保持空間感，想像聲音往胸腔沉',
   ],
   verification: '唱下行音階時，喉頭穩定不亂動。',
+  videoUrl: 'https://www.youtube.com/watch?v=GfomgQX6KzM',
 };
 
 const EXERCISE_5: Exercise = {
@@ -152,6 +158,7 @@ const EXERCISE_5: Exercise = {
     '聲音悶在喉嚨裡 → 想像聲音從胸口「射」出去',
   ],
   verification: '唱低音時胸口明顯震動，聲音渾厚不虛。',
+  videoUrl: 'https://www.youtube.com/watch?v=aSLoI3cEtQs',
 };
 
 const EXERCISE_6: Exercise = {
@@ -169,6 +176,7 @@ const EXERCISE_6: Exercise = {
     '高音時下巴收緊 → 下巴完全放鬆，像含著一口水',
   ],
   verification: '哼鳴時眉心有明顯震動感；Mmm → Ma 轉換時位置不掉。',
+  videoUrl: 'https://www.youtube.com/watch?v=3hyG5wMQBVo',
 };
 
 const EXERCISE_7: Exercise = {
@@ -186,6 +194,7 @@ const EXERCISE_7: Exercise = {
     '聲音悶在鼻子裡 → 想像聲音從眉心「射」向前方',
   ],
   verification: '頭腔聲音明亮、集中、不費力；從閉口到開口位置一致。',
+  videoUrl: 'https://www.youtube.com/watch?v=DCh4A6JJ1T4',
 };
 
 const EXERCISE_8: Exercise = {
@@ -203,6 +212,7 @@ const EXERCISE_8: Exercise = {
     '八度跳躍中間有「斷層」→ 氣息持續供給，不要中斷',
   ],
   verification: '滑音平滑無斷層；八度跳躍喉頭穩定。',
+  videoUrl: 'https://www.youtube.com/watch?v=1dZye8lNck4',
 };
 
 const EXERCISE_9: Exercise = {
@@ -220,6 +230,7 @@ const EXERCISE_9: Exercise = {
     '跨音區時音色突變 → 想像聲音是一條絲帶，平滑過渡',
   ],
   verification: '漸強漸弱平穩不抖；跨音區滑音無斷層。',
+  videoUrl: 'https://www.youtube.com/watch?v=kCGhNlRjp_o',
 };
 
 const EXERCISE_10: Exercise = {
@@ -237,6 +248,7 @@ const EXERCISE_10: Exercise = {
     '閉口音太「鼻」→ 氣息從口腔和鼻腔同時流出',
   ],
   verification: '在換聲區附近，聲音自然混合，沒有突然的「斷層」或「變虛」。',
+  videoUrl: 'https://www.youtube.com/watch?v=JeB7ynYpJLM',
 };
 
 const EXERCISE_11: Exercise = {
@@ -254,6 +266,7 @@ const EXERCISE_11: Exercise = {
     '過了換聲區聲音變虛 → 保持混聲狀態，不要退縮',
   ],
   verification: '在 C5 以下都能用混聲穩定發聲；混聲有力不虛、不喊。',
+  videoUrl: 'https://www.youtube.com/watch?v=3bFRooM15rA',
 };
 
 // ============================================================
@@ -269,6 +282,10 @@ const phase1DayContent: Omit<DayContent, 'day'> = {
   goal: '建立正確的呼吸習慣，讓氣息成為唱歌的「油箱」。',
   solution: '氣息不夠用、聲音虛弱無力',
   warmup: WARMUP,
+  warmupVideos: [
+    { label: '唇顫音示範', url: 'https://www.youtube.com/watch?v=cr5wG1xBfDE' },
+    { label: '打嘟嚕練習', url: 'https://www.youtube.com/watch?v=Z57HMfwbvMg' },
+  ],
   exercises: [EXERCISE_1, EXERCISE_2, EXERCISE_3],
   schedule: [
     { time: '3 min', content: '熱身' },
@@ -290,6 +307,10 @@ const phase2DayContent: Omit<DayContent, 'day'> = {
   solution: '聲音虛弱無力、低音下不來',
   review: '每天前 3 分鐘做腹式呼吸（練習一）',
   warmup: WARMUP,
+  warmupVideos: [
+    { label: '唇顫音示範', url: 'https://www.youtube.com/watch?v=cr5wG1xBfDE' },
+    { label: '打嘟嚕練習', url: 'https://www.youtube.com/watch?v=Z57HMfwbvMg' },
+  ],
   exercises: [EXERCISE_4, EXERCISE_5],
   schedule: [
     { time: '3 min', content: '熱身 + 腹式呼吸複習' },
@@ -311,6 +332,10 @@ const phase3DayContent: Omit<DayContent, 'day'> = {
   solution: '高音上不去、聲音悶／聲音飄',
   review: '每天前 2 分鐘腹式呼吸 + 2 分鐘胸腔共鳴',
   warmup: WARMUP,
+  warmupVideos: [
+    { label: '唇顫音示範', url: 'https://www.youtube.com/watch?v=cr5wG1xBfDE' },
+    { label: '打嘟嚕練習', url: 'https://www.youtube.com/watch?v=Z57HMfwbvMg' },
+  ],
   exercises: [EXERCISE_6, EXERCISE_7],
   schedule: [
     { time: '4 min', content: '熱身 + 腹式呼吸複習 + 胸腔共鳴複習' },
@@ -332,6 +357,10 @@ const phase4DayContent: Omit<DayContent, 'day'> = {
   solution: '高音上不去、低音下不來',
   review: '每天前複習氣息 + 胸腔 + 頭腔各 1–2 分鐘',
   warmup: WARMUP,
+  warmupVideos: [
+    { label: '唇顫音示範', url: 'https://www.youtube.com/watch?v=cr5wG1xBfDE' },
+    { label: '打嘟嚕練習', url: 'https://www.youtube.com/watch?v=Z57HMfwbvMg' },
+  ],
   exercises: [EXERCISE_8, EXERCISE_9],
   schedule: [
     { time: '5 min', content: '熱身 + 氣息 + 胸腔 + 頭腔快速複習' },
@@ -352,6 +381,10 @@ const phase5DayContent: Omit<DayContent, 'day'> = {
   solution: '聲音斷層、力量不足',
   review: '全身熱身 + 氣息 + 胸腔 + 頭腔快速複習',
   warmup: WARMUP,
+  warmupVideos: [
+    { label: '唇顫音示範', url: 'https://www.youtube.com/watch?v=cr5wG1xBfDE' },
+    { label: '打嘟嚕練習', url: 'https://www.youtube.com/watch?v=Z57HMfwbvMg' },
+  ],
   exercises: [EXERCISE_10, EXERCISE_11],
   schedule: [
     { time: '5 min', content: '全身熱身 + 氣息 + 胸腔 + 頭腔快速複習' },

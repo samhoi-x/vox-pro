@@ -238,6 +238,23 @@ export default function ExerciseCard({ exercise, index, phase, phaseName }: Prop
               <p className="mt-1.5 text-xs text-[var(--danger)]">{audioError}</p>
             )}
           </div>
+
+          {/* Video guide */}
+          {exercise.videoUrl && (
+            <div>
+              <a
+                href={exercise.videoUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg
+                           bg-red-500/10 text-red-400 font-medium text-sm
+                           hover:bg-red-500/20 transition-colors"
+              >
+                📺 示範影片
+              </a>
+            </div>
+          )}
         </div>
       )}
     </div>

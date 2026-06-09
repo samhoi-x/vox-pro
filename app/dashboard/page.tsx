@@ -295,6 +295,25 @@ export default function DashboardPage() {
                 </li>
               ))}
             </ol>
+
+            {/* Warmup video links */}
+            {dayContent.warmupVideos && dayContent.warmupVideos.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {dayContent.warmupVideos.map((video, i) => (
+                  <a
+                    key={i}
+                    href={video.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg
+                               bg-red-500/10 text-red-400 text-xs font-medium
+                               hover:bg-red-500/20 transition-colors"
+                  >
+                    📺 {video.label}
+                  </a>
+                ))}
+              </div>
+            )}
           </section>
         )}
 
