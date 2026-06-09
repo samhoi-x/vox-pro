@@ -135,6 +135,15 @@ export default function DashboardPage() {
   const isTodayCompleted = completedDays.includes(activeDay);
   const phaseClass = dayContent ? `phase-${dayContent.phase}` : "";
 
+  // Beginner-friendly phase taglines
+  const phaseTaglines: Record<string, string> = {
+    breath: "打好唱歌嘅根基",
+    chest: "令你把聲有厚度同力量",
+    head: "打開你嘅高音區域",
+    range: "消除換聲區嘅斷層",
+    mixed: "融合胸聲同頭聲",
+  };
+
   // ── Loading state ──────────────────────────────────────────────
   if (authLoading || dataLoading) {
     return (
@@ -271,6 +280,13 @@ export default function DashboardPage() {
                 {dayContent.totalTime}
               </span>
             </div>
+
+            {/* Phase tagline — beginner-friendly */}
+            {phaseTaglines[dayContent.phase] && (
+              <p className="text-sm text-[var(--text-muted)] italic">
+                💡 {phaseTaglines[dayContent.phase]}
+              </p>
+            )}
 
             {/* Goal */}
             <div>

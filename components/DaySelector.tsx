@@ -28,48 +28,58 @@ export default function DaySelector({ activeDay, completedDays, onSelectDay, pha
 
   return (
     <div className="w-full">
-      {/* Day dots */}
-      <div className="flex flex-wrap gap-3 justify-center mb-4">
-        {Array.from({ length: 18 }, (_, i) => i + 1).map((day) => {
-          const isActive = day === activeDay;
-          const isCompleted = completedDays.includes(day);
-          const color = phaseColors[
-            phaseRanges.find((r) => day >= r.start && day <= r.end)?.phase ?? "breath"
-          ];
+      {/* Day dots — grouped by phase */}
+      <div className="flex flex-wrap items-center gap-1 justify-center mb-4">
+        {phaseRanges.map((range, rangeIdx) => (
+          <div key={range.phase} className="flex items-center gap-1">
+            {/* Phase group */}
+            {Array.from({ length: range.end - range.start + 1 }, (_, i) => range.start + i).map((day) => {
+              const isActive = day === activeDay;
+              const isCompleted = completedDays.includes(day);
+              const color = phaseColors[range.phase] ?? "#a78bfa";
 
-          return (
-            <button
-              key={day}
-              onClick={() => onSelectDay(day)}
-              className={`
-                relative w-[38px] h-[38px] rounded-full border-2 flex items-center justify-center
-                text-sm font-semibold transition-all duration-200 cursor-pointer
-                ${isActive
-                  ? "scale-110 shadow-[0_0_12px_var(--phase-color)] border-[var(--phase-color)]"
-                  : "border-[var(--border)] hover:border-[var(--text-muted)]"
-                }
-              `}
-              style={{
-                ["--phase-color" as string]: isActive ? activeColor : isCompleted ? color : undefined,
-                borderColor: isActive
-                  ? activeColor
-                  : isCompleted
-                    ? color
-                    : undefined,
-                backgroundColor: isActive
-                  ? `${activeColor}22`
-                  : isCompleted
-                    ? `${color}18`
-                    : "var(--surface)",
-                color: isActive ? activeColor : isCompleted ? color : "var(--text-muted)",
-              }}
-              aria-label={`Day ${day}${isCompleted ? " (completed)" : ""}`}
-              title={`Day ${day}${isCompleted ? " ✓" : ""}`}
-            >
-              {isCompleted ? "✓" : day}
-            </button>
-          );
-        })}
+              return (
+                <button
+                  key={day}
+                  onClick={() => onSelectDay(day)}
+                  className={`
+                    relative w-[38px] h-[38px] rounded-full border-2 flex items-center justify-center
+                    text-sm font-semibold transition-all duration-200 cursor-pointer
+                    ${isActive
+                      ? "scale-110 shadow-[0_0_12px_var(--phase-color)] border-[var(--phase-color)]"
+                      : "border-[var(--border)] hover:border-[var(--text-muted)]"
+                    }
+                  `}
+                  style={{
+                    ["--phase-color" as string]: isActive ? activeColor : isCompleted ? color : undefined,
+                    borderColor: isActive
+                      ? activeColor
+                      : isCompleted
+                        ? color
+                        : undefined,
+                    backgroundColor: isActive
+                      ? `${activeColor}22`
+                      : isCompleted
+                        ? `${color}18`
+                        : "var(--surface)",
+                    color: isActive ? activeColor : isCompleted ? color : "var(--text-muted)",
+                  }}
+                  aria-label={`Day ${day}${isCompleted ? " (completed)" : ""}`}
+                  title={`Day ${day}${isCompleted ? " ✓" : ""}`}
+                >
+                  {isCompleted ? "✓" : day}
+                </button>
+              );
+            })}
+            {/* Phase divider (except after last group) */}
+            {rangeIdx < phaseRanges.length - 1 && (
+              <div
+                className="w-[2px] h-[28px] rounded-full mx-1"
+                style={{ backgroundColor: `${phaseColors[range.phase] ?? "#a78bfa"}30` }}
+              />
+            )}
+          </div>
+        ))}
       </div>
 
       {/* Phase timeline */}
@@ -78,6 +88,9 @@ export default function DaySelector({ activeDay, completedDays, onSelectDay, pha
           const color = phaseColors[range.phase] ?? "#a78bfa";
           const days = range.end - range.start + 1;
           const isActivePhase = phase === range.phase;
+          // Check if all days in this phase are completed
+          const phaseDays = Array.from({ length: days }, (_, i) => range.start + i);
+          const isPhaseCompleted = phaseDays.every((d) => completedDays.includes(d));
 
           return (
             <div key={range.phase} className="flex items-center flex-1" style={{ flex: days }}>
@@ -91,22 +104,34 @@ export default function DaySelector({ activeDay, completedDays, onSelectDay, pha
                 className={`
                   flex-1 flex flex-col items-center gap-1 py-2 px-1 rounded-md transition-all duration-200
                   ${isActivePhase ? "bg-[var(--phase-color)]/10 ring-1 ring-[var(--phase-color)]/30" : ""}
+                  ${isPhaseCompleted ? "opacity-80" : ""}
                 `}
                 style={{ ["--phase-color" as string]: color }}
               >
                 <div
                   className="h-[6px] w-full rounded-full"
-                  style={{ backgroundColor: color }}
+                  style={{
+                    backgroundColor: isPhaseCompleted ? `${color}80` : color,
+                  }}
                 />
                 <span
                   className="text-[10px] font-medium whitespace-nowrap leading-tight"
                   style={{ color }}
                 >
-                  {range.label}
+                  {isPhaseCompleted ? "✅ " : ""}{range.label}
                 </span>
                 <span className="text-[9px] text-[var(--text-dim)]">
                   Day {range.start}–{range.end}
                 </span>
+                {/* "You are here" indicator */}
+                {isActivePhase && (
+                  <span
+                    className="text-[9px] font-bold mt-0.5"
+                    style={{ color }}
+                  >
+                    ▼ 你在此
+                  </span>
+                )}
               </div>
 
               {/* Connector line after (except last) */}
