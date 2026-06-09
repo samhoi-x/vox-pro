@@ -11,7 +11,7 @@ type DisplayMode = "traditional" | "simplified";
 declare global {
   interface Window {
     OpenCC?: {
-      Converter: new (from: string, to: string) => {
+      Converter: (options: { from: string; to: string }) => {
         (text: string): Promise<string>;
       };
     };
@@ -52,7 +52,7 @@ export default function LangToggle() {
 
       // Check if already loaded via CDN script tag
       if ((window as any).OpenCC) {
-        const converter = new (window as any).OpenCC.Converter({ from: "tw", to: "cn" });
+        const converter = (window as any).OpenCC.Converter({ from: "tw", to: "cn" });
         const fn = (text: string) => converter(text);
         converterRef.current = fn;
         return fn;
@@ -72,7 +72,7 @@ export default function LangToggle() {
         throw new Error("OpenCC not available after script load");
       }
 
-      const converter = new (window as any).OpenCC.Converter({ from: "tw", to: "cn" });
+      const converter = (window as any).OpenCC.Converter({ from: "tw", to: "cn" });
       const fn = (text: string) => converter(text);
       converterRef.current = fn;
       return fn;
