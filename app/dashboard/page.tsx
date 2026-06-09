@@ -10,7 +10,6 @@ import PianoScale from "@/components/PianoScale";
 import ExerciseCard from "@/components/ExerciseCard";
 import ProgressGrid from "@/components/ProgressGrid";
 import ThemeToggle from "@/components/ThemeToggle";
-import LangToggle from "@/components/LangToggle";
 import Paywall from "@/components/Paywall";
 import VideoModal from "@/components/VideoModal";
 import FeedbackModal from "@/components/FeedbackModal";
@@ -203,7 +202,6 @@ export default function DashboardPage() {
               登出
             </button>
             <ThemeToggle />
-            <LangToggle />
           </div>
         </header>
 
