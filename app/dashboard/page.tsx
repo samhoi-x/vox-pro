@@ -333,6 +333,7 @@ export default function DashboardPage() {
                 key={exercise.id}
                 exercise={exercise}
                 index={i}
+                phase={dayContent.phase}
               />
             ))}
           </section>

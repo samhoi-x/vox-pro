@@ -6,9 +6,10 @@ import type { Exercise } from "@/lib/content";
 type Props = {
   exercise: Exercise;
   index: number;
+  phase: string;
 };
 
-export default function ExerciseCard({ exercise, index }: Props) {
+export default function ExerciseCard({ exercise, index, phase }: Props) {
   const [expanded, setExpanded] = useState(false);
   const [miniTimers, setMiniTimers] = useState<Record<number, { remaining: number; running: boolean }>>({});
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -77,6 +78,7 @@ export default function ExerciseCard({ exercise, index }: Props) {
     setAudioError(null);
     // Try multiple possible paths
     const paths = [
+      `/audio/${phase}.mp3`,
       `/audio/${exercise.id}.mp3`,
       `/audio/exercise-${index + 1}.mp3`,
     ];
