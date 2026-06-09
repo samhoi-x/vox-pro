@@ -116,7 +116,7 @@ export default function LandingPage() {
           {[
             { icon: "🫁", title: "正確呼吸支援", desc: "用丹田而唔係喉嚨發聲，唱得持久唔攰" },
             { icon: "🎯", title: "穩定音準控制", desc: "音階練習幫你建立準確嘅音感基礎" },
-            { icon: "🔊", title: "胸腔 + 頭聲共鳴", desc: "搵到你唔同音域嘅共鳴點，把聲更有力" },
+            { icon: "🔊", title: "胸腔 + 頭腔共鳴", desc: "搵到你唔同音域嘅共鳴點，把聲更有力" },
             { icon: "🎵", title: "基本混聲技巧", desc: "胸聲同頭聲之間嘅過渡，為高音舖路" },
             { icon: "📈", title: "可量化進步", desc: "追蹤你每日進度，見到自己一步步成長" },
             { icon: "🚀", title: "進階學習嘅穩固根基", desc: "無論你想學 belting、假音定係 riff，都要由呢度開始" },
@@ -142,10 +142,10 @@ export default function LandingPage() {
         </h2>
         <div className="space-y-3">
           {[
-            { day: "Day 1–3", phase: "氣息基礎", desc: "建立正確呼吸習慣，搵到丹田支撐", color: "from-emerald-500 to-teal-500" },
-            { day: "Day 4–7", phase: "胸腔共鳴", desc: "開發胸腔聲音，增加厚度同力量", color: "from-blue-500 to-indigo-500" },
-            { day: "Day 8–11", phase: "頭聲共鳴", desc: "連接頭腔共鳴，打開高音區域", color: "from-purple-500 to-pink-500" },
-            { day: "Day 12–15", phase: "音域擴展", desc: "整合高低音區，擴大可用音域", color: "from-amber-500 to-orange-500" },
+            { day: "Day 1–4", phase: "氣息基礎", desc: "建立正確呼吸習慣，搵到丹田支撐", color: "from-emerald-500 to-teal-500" },
+            { day: "Day 5–8", phase: "胸腔共鳴", desc: "開發胸腔聲音，增加厚度同力量", color: "from-blue-500 to-indigo-500" },
+            { day: "Day 9–12", phase: "頭腔共鳴", desc: "連接頭腔共鳴，打開高音區域", color: "from-purple-500 to-pink-500" },
+            { day: "Day 13–15", phase: "高低音轉換", desc: "胸聲頭聲順滑過渡，消除換聲區斷層", color: "from-amber-500 to-orange-500" },
             { day: "Day 16–18", phase: "混聲整合", desc: "胸聲頭聲融合，為進階技巧打好根基", color: "from-rose-500 to-red-500" },
           ].map((stage) => (
             <div
