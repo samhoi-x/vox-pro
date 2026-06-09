@@ -46,7 +46,8 @@ export default function LangToggle() {
       // Dynamic import of opencc-js (from npm, not CDN)
       const { Converter } = await import("opencc-js");
       const converter = Converter({ from: "tw", to: "cn" });
-      converterRef.current = (text: string) => converter(text);
+      // Converter is synchronous in npm version — wrap in Promise for uniform API
+      converterRef.current = (text: string) => Promise.resolve(converter(text));
       return converterRef.current;
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Unknown error";
