@@ -334,6 +334,7 @@ export default function DashboardPage() {
                 exercise={exercise}
                 index={i}
                 phase={dayContent.phase}
+                phaseName={dayContent.phaseName}
               />
             ))}
           </section>

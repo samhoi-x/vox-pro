@@ -7,9 +7,10 @@ type Props = {
   exercise: Exercise;
   index: number;
   phase: string;
+  phaseName: string;
 };
 
-export default function ExerciseCard({ exercise, index, phase }: Props) {
+export default function ExerciseCard({ exercise, index, phase, phaseName }: Props) {
   const [expanded, setExpanded] = useState(false);
   const [miniTimers, setMiniTimers] = useState<Record<number, { remaining: number; running: boolean }>>({});
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -230,7 +231,8 @@ export default function ExerciseCard({ exercise, index, phase }: Props) {
                          bg-[var(--breath)]/15 text-[var(--breath)] font-medium text-sm
                          hover:bg-[var(--breath)]/25 transition-colors"
             >
-              🎙️ 聽語音指導
+              🎙️ {phaseName}語音指導
+              <span className="text-xs opacity-60 font-normal">（本階段共用）</span>
             </button>
             {audioError && (
               <p className="mt-1.5 text-xs text-[var(--danger)]">{audioError}</p>
