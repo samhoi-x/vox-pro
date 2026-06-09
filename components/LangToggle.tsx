@@ -3,18 +3,12 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 
 const STORAGE_KEY = "vox-lang";
-const CDN_URL = "https://cdn.jsdelivr.net/npm/opencc-js@1.0.5/dist/umd/full.min.js";
 
-type Lang = "t2s" | "s2t"; // t2s = traditional to simplified, s2t = simplified to traditional
 type DisplayMode = "traditional" | "simplified";
 
 declare global {
   interface Window {
-    OpenCC?: {
-      Converter: (options: { from: string; to: string }) => {
-        (text: string): Promise<string>;
-      };
-    };
+    __voxOriginalTexts?: Map<Node, string>;
   }
 }
 
@@ -31,53 +25,32 @@ export default function LangToggle() {
   const [error, setError] = useState<string | null>(null);
   const converterRef = useRef<((text: string) => Promise<string>) | null>(null);
   const convertingRef = useRef(false);
-  const originalTextsRef = useRef<Map<Node, string>>(new Map());
 
   // Initialize on mount
   useEffect(() => {
     const stored = getStoredLang();
     setDisplayMode(stored);
     if (stored === "simplified") {
-      loadAndConvert("t2s");
+      loadAndConvert();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const loadOpenCC = useCallback(async (): Promise<((text: string) => Promise<string>) | null> => {
+  const loadConverter = useCallback(async () => {
     if (converterRef.current) return converterRef.current;
 
+    setLoading(true);
+    setError(null);
+
     try {
-      setLoading(true);
-      setError(null);
-
-      // Check if already loaded via CDN script tag
-      if ((window as any).OpenCC) {
-        const converter = (window as any).OpenCC.Converter({ from: "tw", to: "cn" });
-        const fn = (text: string) => converter(text);
-        converterRef.current = fn;
-        return fn;
-      }
-
-      // Load from CDN
-      await new Promise<void>((resolve, reject) => {
-        const script = document.createElement("script");
-        script.src = CDN_URL;
-        script.async = true;
-        script.onload = () => resolve();
-        script.onerror = () => reject(new Error("Failed to load opencc-js from CDN"));
-        document.head.appendChild(script);
-      });
-
-      if (!(window as any).OpenCC) {
-        throw new Error("OpenCC not available after script load");
-      }
-
-      const converter = (window as any).OpenCC.Converter({ from: "tw", to: "cn" });
-      const fn = (text: string) => converter(text);
-      converterRef.current = fn;
-      return fn;
+      // Dynamic import of opencc-js (from npm, not CDN)
+      const { Converter } = await import("opencc-js");
+      const converter = Converter({ from: "tw", to: "cn" });
+      converterRef.current = (text: string) => converter(text);
+      return converterRef.current;
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Unknown error";
+      console.error("LangToggle: failed to load opencc-js:", err);
       setError(`無法載入繁簡轉換工具：${msg}`);
       return null;
     } finally {
@@ -87,18 +60,24 @@ export default function LangToggle() {
 
   // Store original texts on first conversion
   const storeOriginals = useCallback(() => {
-    if (originalTextsRef.current.size > 0) return; // Already stored
+    // Use window-level storage to survive hot reload
+    if (!window.__voxOriginalTexts) {
+      window.__voxOriginalTexts = new Map();
+    }
+    const map = window.__voxOriginalTexts;
+    if (map.size > 0) return; // Already stored
 
     const walker = document.createTreeWalker(
       document.body,
       NodeFilter.SHOW_TEXT,
       {
         acceptNode: (node) => {
-          // Skip script, style, and nodes inside the toggle button itself
           const parent = node.parentElement;
           if (!parent) return NodeFilter.FILTER_REJECT;
-          if (["SCRIPT", "STYLE", "NOSCRIPT"].includes(parent.tagName)) return NodeFilter.FILTER_REJECT;
-          if (parent.closest("[data-lang-toggle]")) return NodeFilter.FILTER_REJECT;
+          if (["SCRIPT", "STYLE", "NOSCRIPT"].includes(parent.tagName))
+            return NodeFilter.FILTER_REJECT;
+          if (parent.closest("[data-lang-toggle]"))
+            return NodeFilter.FILTER_REJECT;
           const text = node.textContent?.trim();
           if (!text) return NodeFilter.FILTER_REJECT;
           return NodeFilter.FILTER_ACCEPT;
@@ -108,53 +87,54 @@ export default function LangToggle() {
 
     let node: Node | null;
     while ((node = walker.nextNode())) {
-      if (!originalTextsRef.current.has(node)) {
-        originalTextsRef.current.set(node, node.textContent ?? "");
+      if (!map.has(node)) {
+        map.set(node, node.textContent ?? "");
       }
     }
   }, []);
 
   // Restore original texts
   const restoreOriginals = useCallback(() => {
-    originalTextsRef.current.forEach((original, node) => {
+    const map = window.__voxOriginalTexts;
+    if (!map) return;
+    map.forEach((original, node) => {
       if (node.parentElement) {
         node.textContent = original;
       }
     });
   }, []);
 
-  const loadAndConvert = useCallback(
-    async (direction: Lang) => {
-      const converter = await loadOpenCC();
-      if (!converter) return;
+  const loadAndConvert = useCallback(async () => {
+    const convert = await loadConverter();
+    if (!convert) return;
 
-      // Store originals if not already done
-      storeOriginals();
+    storeOriginals();
 
-      setDisplayMode(direction === "t2s" ? "simplified" : "traditional");
+    const map = window.__voxOriginalTexts;
+    if (!map) return;
 
-      if (convertingRef.current) return;
-      convertingRef.current = true;
+    if (convertingRef.current) return;
+    convertingRef.current = true;
 
+    let hasError = false;
+    const entries = Array.from(map.entries());
+    for (const [node, original] of entries) {
+      if (!node.parentElement) continue;
       try {
-        const promises: Promise<void>[] = [];
-        originalTextsRef.current.forEach((original, node) => {
-          if (!node.parentElement) return;
-          promises.push(
-            converter(original).then((converted) => {
-              node.textContent = converted;
-            })
-          );
-        });
-        await Promise.all(promises);
-      } catch {
-        setError("文字轉換過程中發生錯誤");
-      } finally {
-        convertingRef.current = false;
+        const converted = await convert(original);
+        node.textContent = converted;
+      } catch (err) {
+        console.error("LangToggle: failed to convert node:", err);
+        hasError = true;
       }
-    },
-    [loadOpenCC, storeOriginals]
-  );
+    }
+
+    if (hasError) {
+      setError("部分文字轉換失敗");
+    }
+
+    convertingRef.current = false;
+  }, [loadConverter, storeOriginals]);
 
   const toggle = useCallback(async () => {
     if (loading) return;
@@ -163,7 +143,8 @@ export default function LangToggle() {
       // Convert to simplified
       localStorage.setItem(STORAGE_KEY, "simplified");
       document.documentElement.setAttribute("data-lang", "simplified");
-      await loadAndConvert("t2s");
+      await loadAndConvert();
+      setDisplayMode("simplified");
     } else {
       // Restore traditional
       localStorage.setItem(STORAGE_KEY, "traditional");
@@ -182,8 +163,8 @@ export default function LangToggle() {
                    flex items-center justify-center text-sm font-bold
                    hover:bg-[var(--border)] transition-all duration-150 cursor-pointer
                    disabled:opacity-50 disabled:cursor-not-allowed"
-        aria-label={`Switch to ${displayMode === "traditional" ? "simplified" : "traditional"} Chinese`}
-        title={`Switch to ${displayMode === "traditional" ? "simplified" : "traditional"} Chinese`}
+        aria-label={`切換至${displayMode === "traditional" ? "簡體" : "繁體"}中文`}
+        title={`切換至${displayMode === "traditional" ? "簡體" : "繁體"}中文`}
       >
         {displayMode === "traditional" ? "简" : "繁"}
       </button>
