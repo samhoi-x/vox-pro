@@ -135,6 +135,15 @@ export default function DashboardPage() {
             <span className="text-xs text-[var(--text-muted)] bg-[var(--surface)] border border-[var(--border)] px-2 py-1 rounded-full truncate max-w-[160px] sm:max-w-[200px]">
               {user.email}
             </span>
+            {isFreeUser ? (
+              <span className="text-xs bg-[var(--surface)] border border-[var(--border)] text-[var(--text-muted)] px-2.5 py-1 rounded-full">
+                🆓 免費試用
+              </span>
+            ) : (
+              <span className="text-xs bg-purple-600/20 border border-purple-600 text-purple-300 px-2.5 py-1 rounded-full">
+                ⭐ Pro
+              </span>
+            )}
           </div>
           <div className="flex items-center gap-2">
             <button
@@ -150,6 +159,40 @@ export default function DashboardPage() {
             <LangToggle />
           </div>
         </header>
+
+        {/* Trial / Pro status banner */}
+        {isFreeUser ? (
+          <div className="bg-[var(--surface)] border border-[var(--border)] rounded-xl px-4 py-3 flex items-center justify-between gap-3 flex-wrap">
+            <div className="flex items-center gap-2 text-sm text-[var(--text-muted)]">
+              <span>🆓</span>
+              <span>免費試用：<strong className="text-[var(--text)]">Day 1–3</strong> 可完整體驗</span>
+              {activeDay <= 3 && (
+                <span className="text-xs text-[var(--accent)]">
+                  （尚餘 {3 - activeDay + 1} 日）
+                </span>
+              )}
+            </div>
+            <a
+              href="/api/checkout"
+              onClick={async (e) => {
+                e.preventDefault();
+                try {
+                  const res = await fetch("/api/checkout", { method: "POST" });
+                  const data = await res.json();
+                  if (data.url) window.location.href = data.url;
+                } catch {}
+              }}
+              className="text-xs bg-[var(--accent-glow)] text-white px-4 py-1.5 rounded-full font-bold hover:brightness-110 transition-all shrink-0"
+            >
+              升級 Pro
+            </a>
+          </div>
+        ) : (
+          <div className="bg-purple-600/10 border border-purple-600/30 rounded-xl px-4 py-3 flex items-center gap-2 text-sm">
+            <span>⭐</span>
+            <span className="text-purple-300">Pro 會員 — 已解鎖全部 18 天課程</span>
+          </div>
+        )}
 
         {/* ========================================================
             DAY SELECTOR
