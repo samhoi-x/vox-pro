@@ -235,7 +235,7 @@ const EXERCISE_8: Exercise = {
   verification: '滑音平滑無斷層；八度跳躍喉頭穩定。',
   videos: [
     { title: 'Lip trill 幫你輕鬆唱高低音', url: 'https://www.youtube.com/shorts/6aZhTBywL28', embedId: '6aZhTBywL28' },
-    { title: '滑音練習 Say or Sing', url: 'https://www.youtube.com/playlist?list=PLzANh4rNycJWYDyQVjx4_mmkYuPc8vHFc', embedId: null },
+    { title: '滑音練習 Say or Sing', url: 'https://www.youtube.com/playlist?list=PLzANh4rNycJWYDyQVjx4_mmkYuPc8vHFc', embedId: 'videoseries?list=PLzANh4rNycJWYDyQVjx4_mmkYuPc8vHFc' },
   ],
 };
 
