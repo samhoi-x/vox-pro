@@ -20,7 +20,7 @@ export async function POST(request: Request) {
     const catLabel = CATEGORY_LABELS[category] || "💬 其他";
 
     await resend.emails.send({
-      from: "Vox Pro <feedback@vox-pro.app>",
+      from: "Vox Pro <onboarding@resend.dev>",
       to: "iatsam@gmail.com",
       subject: `${catLabel} — Vox Pro 用戶回饋`,
       html: `
