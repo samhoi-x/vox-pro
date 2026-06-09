@@ -22,7 +22,7 @@ export async function POST(request: Request) {
     await resend.emails.send({
       from: "Vox Pro <onboarding@resend.dev>",
       to: "iatsam@gmail.com",
-      subject: `${catLabel} — Vox Pro 用戶回饋`,
+      subject: `${catLabel} — Vox Pro 用戶回饋（${email}）`,
       html: `
         <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
           <h2 style="color: #7c3aed;">🎤 Vox Pro 用戶回饋</h2>
