@@ -23,7 +23,7 @@ export default function LandingPage() {
             href="/login"
             className="px-8 py-3 bg-purple-600 text-white rounded-full font-bold hover:bg-purple-500 transition-colors"
           >
-            免費試用頭 3 日
+            免費試用 3 日 · 全部內容任睇
           </Link>
           <Link
             href="/login"
@@ -178,11 +178,11 @@ export default function LandingPage() {
             <h3 className="text-lg font-bold mb-2">免費試用</h3>
             <p className="text-4xl font-black mb-4">$0</p>
             <ul className="text-sm text-gray-400 space-y-2 mb-6">
-              <li>✅ Day 1–3 完整課程</li>
+              <li>✅ 3 日內自由體驗全部 18 日課程</li>
               <li>✅ 語音指導 + 示範影片</li>
               <li>✅ 計時器 + 鋼琴音階</li>
               <li>✅ 雲端進度同步</li>
-              <li>❌ Day 4+ 進階內容</li>
+              <li>❌ 試用期後需解鎖</li>
             </ul>
             <Link
               href="/login"
@@ -234,10 +234,10 @@ export default function LandingPage() {
           href="/login"
           className="inline-block px-10 py-4 bg-purple-600 text-white rounded-full font-bold text-lg hover:bg-purple-500 transition-colors"
         >
-          免費試用頭 3 日
+          免費試用 3 日 · 全部內容任睇
         </Link>
         <p className="text-xs text-gray-600 mt-3">
-          無需信用卡 · 試完先決定
+          無需信用卡 · 3 日內自由體驗全部 18 日課程 · 試完先決定
         </p>
       </section>
 

@@ -21,6 +21,7 @@ export default function DashboardPage() {
   const [activeDay, setActiveDay] = useState(1);
   const [completedDays, setCompletedDays] = useState<number[]>([]);
   const [subscriptionTier, setSubscriptionTier] = useState<string>("free");
+  const [trialStartedAt, setTrialStartedAt] = useState<string | null>(null);
   const [dataLoading, setDataLoading] = useState(true);
   const [toggling, setToggling] = useState(false);
   const [warmupModal, setWarmupModal] = useState<{ label: string; url: string; embedId: string | null } | null>(null);
@@ -38,7 +39,7 @@ export default function DashboardPage() {
           supabase.from("progress").select("day").eq("user_id", user!.id),
           supabase
             .from("profiles")
-            .select("subscription_tier")
+            .select("subscription_tier, trial_started_at")
             .eq("id", user!.id)
             .single(),
         ]);
@@ -53,6 +54,24 @@ export default function DashboardPage() {
 
         if (profileRes.data?.subscription_tier) {
           setSubscriptionTier(profileRes.data.subscription_tier);
+        }
+
+        // Set trial start on first access (free users only)
+        if (profileRes.data) {
+          if (profileRes.data.trial_started_at) {
+            setTrialStartedAt(profileRes.data.trial_started_at);
+          } else if (profileRes.data.subscription_tier === "free" || !profileRes.data.subscription_tier) {
+            const now = new Date().toISOString();
+            setTrialStartedAt(now);
+            // Fire-and-forget: record trial start in DB
+            supabase
+              .from("profiles")
+              .update({ trial_started_at: now })
+              .eq("id", user!.id)
+              .then(({ error }) => {
+                if (error) console.error("Failed to set trial_started_at:", error);
+              });
+          }
         }
       } catch (err) {
         console.error("Failed to load dashboard data:", err);
@@ -103,7 +122,16 @@ export default function DashboardPage() {
   // ── Derived data ───────────────────────────────────────────────
   const dayContent: DayContent | undefined = getDayContent(activeDay);
   const isFreeUser = subscriptionTier === "free";
-  const showPaywall = activeDay >= 4 && isFreeUser;
+  // Time-based trial: 3 days (72 hours) from first dashboard access
+  const TRIAL_HOURS = 72;
+  const trialEnd = trialStartedAt
+    ? new Date(new Date(trialStartedAt).getTime() + TRIAL_HOURS * 60 * 60 * 1000)
+    : null;
+  const trialExpired = trialEnd ? new Date() > trialEnd : false;
+  const showPaywall = isFreeUser && trialExpired;
+  const trialHoursLeft = trialEnd
+    ? Math.max(0, Math.ceil((trialEnd.getTime() - Date.now()) / (1000 * 60 * 60)))
+    : TRIAL_HOURS;
   const isTodayCompleted = completedDays.includes(activeDay);
   const phaseClass = dayContent ? `phase-${dayContent.phase}` : "";
 
@@ -175,11 +203,15 @@ export default function DashboardPage() {
           <div className="bg-[var(--surface)] border border-[var(--border)] rounded-xl px-4 py-3 flex items-center justify-between gap-3 flex-wrap">
             <div className="flex items-center gap-2 text-sm text-[var(--text-muted)]">
               <span>🆓</span>
-              <span>免費試用：<strong className="text-[var(--text)]">Day 1–3</strong> 可完整體驗</span>
-              {activeDay <= 3 && (
-                <span className="text-xs text-[var(--accent)]">
-                  （尚餘 {3 - activeDay + 1} 日）
+              {!trialExpired ? (
+                <span>
+                  免費試用：<strong className="text-[var(--text)]">全部 18 日內容</strong> 自由體驗 ·{" "}
+                  <span className="text-xs text-[var(--accent)]">
+                    尚餘 {Math.floor(trialHoursLeft / 24)} 日 {trialHoursLeft % 24} 小時
+                  </span>
                 </span>
+              ) : (
+                <span>免費試用已結束 — 升級 Pro 繼續練習</span>
               )}
             </div>
             <a
@@ -415,7 +447,7 @@ export default function DashboardPage() {
         />
 
         {/* ========================================================
-            PAYWALL (days 4+ for free users)
+            PAYWALL (after 3-day trial expires for free users)
            ======================================================== */}
         {showPaywall && <Paywall />}
 
