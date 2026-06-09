@@ -15,6 +15,7 @@ export default function LoginForm() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [isSignUp, setIsSignUp] = useState(false);
+  const [forgotPassword, setForgotPassword] = useState(false);
 
   if (user) {
     router.push(redirect);
@@ -45,6 +46,21 @@ export default function LoginForm() {
     setLoading(false);
   };
 
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setMessage("");
+
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/auth/reset-password`,
+    });
+
+    if (error) setMessage(error.message);
+    else setMessage("已發送重設密碼連結到你的電郵 ✉️");
+
+    setLoading(false);
+  };
+
   const handleGoogleLogin = async () => {
     await supabase.auth.signInWithOAuth({
       provider: "google",
@@ -53,6 +69,54 @@ export default function LoginForm() {
       },
     });
   };
+
+  if (forgotPassword) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#0f0f14] p-4">
+        <div className="w-full max-w-sm space-y-6">
+          <div className="text-center">
+            <h1 className="text-2xl font-black bg-gradient-to-r from-purple-400 to-amber-400 bg-clip-text text-transparent">
+              🔑 重設密碼
+            </h1>
+            <p className="text-sm text-gray-400 mt-1">
+              輸入你嘅電郵，我哋會發送重設連結
+            </p>
+          </div>
+
+          <div className="bg-[#1a1a24] border border-[#2a2a3a] rounded-xl p-6 space-y-4">
+            <form onSubmit={handleForgotPassword} className="space-y-3">
+              <input
+                type="email"
+                placeholder="電郵地址"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                className="w-full px-4 py-3 bg-[#0f0f14] border border-[#2a2a3a] rounded-lg text-white placeholder-gray-500 focus:border-purple-500 focus:outline-none"
+              />
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full py-3 bg-purple-600 text-white rounded-lg font-bold hover:bg-purple-500 transition-colors disabled:opacity-50"
+              >
+                {loading ? "發送中..." : "發送重設連結"}
+              </button>
+            </form>
+
+            {message && (
+              <p className="text-sm text-center text-amber-400">{message}</p>
+            )}
+
+            <button
+              onClick={() => { setForgotPassword(false); setMessage(""); }}
+              className="w-full text-center text-sm text-purple-400 hover:underline"
+            >
+              ← 返回登入
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#0f0f14] p-4">
@@ -104,6 +168,19 @@ export default function LoginForm() {
               minLength={6}
               className="w-full px-4 py-3 bg-[#0f0f14] border border-[#2a2a3a] rounded-lg text-white placeholder-gray-500 focus:border-purple-500 focus:outline-none"
             />
+
+            {!isSignUp && (
+              <div className="text-right">
+                <button
+                  type="button"
+                  onClick={() => { setForgotPassword(true); setMessage(""); }}
+                  className="text-xs text-gray-500 hover:text-purple-400 transition-colors"
+                >
+                  忘記密碼？
+                </button>
+              </div>
+            )}
+
             <button
               type="submit"
               disabled={loading}
