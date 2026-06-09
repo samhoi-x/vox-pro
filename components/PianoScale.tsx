@@ -39,12 +39,12 @@ export default function PianoScale() {
   const activeOscRef = useRef<OscillatorNode | null>(null);
   const gainNodeRef = useRef<GainNode | null>(null);
 
-  const getAudioContext = useCallback(() => {
+  const getAudioContext = useCallback(async () => {
     if (!audioCtxRef.current) {
       audioCtxRef.current = new AudioContext();
     }
     if (audioCtxRef.current.state === "suspended") {
-      audioCtxRef.current.resume();
+      await audioCtxRef.current.resume();
     }
     return audioCtxRef.current;
   }, []);
@@ -65,9 +65,9 @@ export default function PianoScale() {
   }, []);
 
   const playNote = useCallback(
-    (freq: number, note: string, durationMs: number = 600) => {
+    async (freq: number, note: string, durationMs: number = 600) => {
       stopActive();
-      const ctx = getAudioContext();
+      const ctx = await getAudioContext();
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
 
@@ -103,10 +103,8 @@ export default function PianoScale() {
 
       for (let i = 0; i < order.length; i++) {
         const key = order[i];
-        await new Promise<void>((resolve) => {
-          playNote(key.freq, key.note, 400);
-          setTimeout(resolve, 500);
-        });
+        playNote(key.freq, key.note, 400);
+        await new Promise<void>((resolve) => setTimeout(resolve, 500));
       }
 
       setSequencePlaying(false);
@@ -198,7 +196,7 @@ export default function PianoScale() {
                      hover:brightness-110 transition-all duration-150
                      disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          ▶ Play Ascending
+          ▶ 上行音階
         </button>
         <button
           onClick={() => playSequence(false)}
@@ -207,7 +205,7 @@ export default function PianoScale() {
                      hover:bg-[var(--border)] transition-all duration-150
                      disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          ◀ Play Descending
+          ◀ 下行音階
         </button>
       </div>
     </div>
