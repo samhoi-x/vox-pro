@@ -1,26 +1,74 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --bg: #0f0f14;
+  --surface: #1a1a24;
+  --surface-raised: #24243a;
+  --text: #e8e6f0;
+  --text-muted: #8a87a0;
+  --text-dim: #58567a;
+  --border: #2a2a3a;
+  --border-active: #6c5ce7;
+  --accent: #a78bfa;
+  --accent-glow: #7c3aed;
+  --gold: #f59e0b;
+  --gold-glow: #d97706;
+  --success: #34d399;
+  --danger: #f87171;
+  --warmup: #f472b6;
+  --breath: #60a5fa;
+  --chest: #fbbf24;
+  --head: #a78bfa;
+  --range: #34d399;
+  --mixed: #fb923c;
+  --radius: 12px;
+  --radius-sm: 8px;
+}
+
+[data-theme="light"] {
+  --bg: #f8f7fc;
+  --surface: #ffffff;
+  --surface-raised: #f0edf8;
+  --text: #1a1826;
+  --text-muted: #5c5a72;
+  --text-dim: #9a98b4;
+  --border: #e2dfee;
+  --border-active: #7c3aed;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-raised: var(--surface-raised);
+  --color-text: var(--text);
+  --color-text-muted: var(--text-muted);
+  --color-text-dim: var(--text-dim);
+  --color-border: var(--border);
+  --color-border-active: var(--border-active);
+  --color-accent: var(--accent);
+  --color-accent-glow: var(--accent-glow);
+  --color-gold: var(--gold);
+  --color-success: var(--success);
+  --color-danger: var(--danger);
+  --color-breath: var(--breath);
+  --color-chest: var(--chest);
+  --color-head: var(--head);
+  --color-range: var(--range);
+  --color-mixed: var(--mixed);
+  --font-sans: "Noto Sans TC", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
 }
+
+/* Phase color utility classes */
+.phase-breath { --phase-color: var(--breath); }
+.phase-chest { --phase-color: var(--chest); }
+.phase-head { --phase-color: var(--head); }
+.phase-range { --phase-color: var(--range); }
+.phase-mixed { --phase-color: var(--mixed); }
