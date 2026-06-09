@@ -13,6 +13,7 @@ import ThemeToggle from "@/components/ThemeToggle";
 import LangToggle from "@/components/LangToggle";
 import Paywall from "@/components/Paywall";
 import VideoModal from "@/components/VideoModal";
+import FeedbackModal from "@/components/FeedbackModal";
 
 export default function DashboardPage() {
   const { user, loading: authLoading, supabase } = useAuth();
@@ -23,6 +24,7 @@ export default function DashboardPage() {
   const [dataLoading, setDataLoading] = useState(true);
   const [toggling, setToggling] = useState(false);
   const [warmupModal, setWarmupModal] = useState<{ label: string; url: string; embedId: string | null } | null>(null);
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
 
   // ── Load progress + subscription on mount ──────────────────────
   useEffect(() => {
@@ -148,6 +150,12 @@ export default function DashboardPage() {
             )}
           </div>
           <div className="flex items-center gap-2">
+            <button
+              onClick={() => setFeedbackOpen(true)}
+              className="text-xs text-[var(--text-muted)] hover:text-[var(--accent)] border border-[var(--border)] hover:border-[var(--accent)] px-3 py-1.5 rounded-lg transition-colors"
+            >
+              💬 回饋
+            </button>
             <button
               onClick={async () => {
                 await supabase.auth.signOut();
@@ -458,6 +466,13 @@ export default function DashboardPage() {
             url={warmupModal.url}
           />
         )}
+
+        {/* Feedback Modal */}
+        <FeedbackModal
+          isOpen={feedbackOpen}
+          onClose={() => setFeedbackOpen(false)}
+          userEmail={user?.email}
+        />
       </div>
     </div>
   );
