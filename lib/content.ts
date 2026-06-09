@@ -10,7 +10,7 @@ export interface Exercise {
   steps: string[];
   commonMistakes: string[];
   verification: string;
-  videoUrl?: string;
+  videos?: { title: string; url: string; embedId: string | null }[];
 }
 
 export interface DayContent {
@@ -22,7 +22,7 @@ export interface DayContent {
   solution: string;
   review?: string;
   warmup: string[];
-  warmupVideos?: { label: string; url: string }[];
+  warmupVideos?: { label: string; url: string; embedId: string | null }[];
   exercises: Exercise[];
   schedule: { time: string; content: string }[];
   totalTime: string;
@@ -92,7 +92,10 @@ const EXERCISE_1: Exercise = {
     '吐氣時氣息一下子衝出來 → 均勻、穩定地釋放',
   ],
   verification: '能穩定地用「嘶～」聲吐氣 16 秒以上。',
-  videoUrl: 'https://www.youtube.com/watch?v=4QeBQkK9Rxw',
+  videos: [
+    { title: '腹式呼吸超簡單練習', url: 'https://www.youtube.com/watch?v=N3pT51rCMD0', embedId: 'N3pT51rCMD0' },
+    { title: '三個最關鍵歌唱呼吸訓練', url: 'https://www.youtube.com/watch?v=b4_k0WIN6Fg', embedId: 'b4_k0WIN6Fg' },
+  ],
 };
 
 const EXERCISE_2: Exercise = {
@@ -108,7 +111,10 @@ const EXERCISE_2: Exercise = {
     '用喉嚨擠壓控制氣息 → 用橫膈膜（肚子）控制',
   ],
   verification: '紙巾貼牆 20 秒不掉；火焰持續傾斜 20 秒不熄滅。',
-  videoUrl: 'https://www.youtube.com/watch?v=QDGd2hFzSVI',
+  videos: [
+    { title: '10分鐘學會氣息穩定支撐', url: 'https://www.youtube.com/watch?v=CXsA3oZ3G7Y', embedId: 'CXsA3oZ3G7Y' },
+    { title: '一次搞懂唱歌氣息支撐', url: 'https://www.youtube.com/watch?v=-Yr66Tc4DyI', embedId: '-Yr66Tc4DyI' },
+  ],
 };
 
 const EXERCISE_3: Exercise = {
@@ -124,7 +130,10 @@ const EXERCISE_3: Exercise = {
     '長音時氣息越來越弱 → 保持橫膈膜持續支撐',
   ],
   verification: '跳音清晰有力，每個音之間有明顯的斷開；長音平穩不抖。',
-  videoUrl: 'https://www.youtube.com/watch?v=9GgHlBYUQyI',
+  videos: [
+    { title: '歌手必做唇顫音彈唇練習', url: 'https://www.youtube.com/watch?v=x71n8O2hPOM', embedId: 'x71n8O2hPOM' },
+    { title: '唇顫音必學教學', url: 'https://www.youtube.com/watch?v=Ilo4763GuTw', embedId: 'Ilo4763GuTw' },
+  ],
 };
 
 const EXERCISE_4: Exercise = {
@@ -141,7 +150,10 @@ const EXERCISE_4: Exercise = {
     '唱低音時喉頭往上跑 → 保持空間感，想像聲音往胸腔沉',
   ],
   verification: '唱下行音階時，喉頭穩定不亂動。',
-  videoUrl: 'https://www.youtube.com/watch?v=GfomgQX6KzM',
+  videos: [
+    { title: '腹式呼吸與喉位放鬆', url: 'https://www.youtube.com/watch?v=Cf4_bnBf6sA', embedId: 'Cf4_bnBf6sA' },
+    { title: '哼鳴大小事 — 打哈欠喉位', url: 'https://www.youtube.com/watch?v=WW94DYoQylY', embedId: 'WW94DYoQylY' },
+  ],
 };
 
 const EXERCISE_5: Exercise = {
@@ -158,7 +170,10 @@ const EXERCISE_5: Exercise = {
     '聲音悶在喉嚨裡 → 想像聲音從胸口「射」出去',
   ],
   verification: '唱低音時胸口明顯震動，聲音渾厚不虛。',
-  videoUrl: 'https://www.youtube.com/watch?v=aSLoI3cEtQs',
+  videos: [
+    { title: '胸腔共鳴發聲練習', url: 'https://www.youtube.com/watch?v=ASgUkdxv2Ys', embedId: 'ASgUkdxv2Ys' },
+    { title: '共鳴深入應用教學', url: 'https://www.youtube.com/watch?v=G3u38yDHg6U', embedId: 'G3u38yDHg6U' },
+  ],
 };
 
 const EXERCISE_6: Exercise = {
@@ -176,7 +191,10 @@ const EXERCISE_6: Exercise = {
     '高音時下巴收緊 → 下巴完全放鬆，像含著一口水',
   ],
   verification: '哼鳴時眉心有明顯震動感；Mmm → Ma 轉換時位置不掉。',
-  videoUrl: 'https://www.youtube.com/watch?v=3hyG5wMQBVo',
+  videos: [
+    { title: '為什麼要哼鳴？作用與位置判斷', url: 'https://www.youtube.com/watch?v=hDVLpZGhAK0', embedId: 'hDVLpZGhAK0' },
+    { title: '哼鳴的深入應用', url: 'https://www.youtube.com/watch?v=9i_aiWADI3I', embedId: '9i_aiWADI3I' },
+  ],
 };
 
 const EXERCISE_7: Exercise = {
@@ -194,7 +212,10 @@ const EXERCISE_7: Exercise = {
     '聲音悶在鼻子裡 → 想像聲音從眉心「射」向前方',
   ],
   verification: '頭腔聲音明亮、集中、不費力；從閉口到開口位置一致。',
-  videoUrl: 'https://www.youtube.com/watch?v=DCh4A6JJ1T4',
+  videos: [
+    { title: '哼鳴練習讓聲音集中有共鳴', url: 'https://www.youtube.com/watch?v=aVY5wG5_kZ0', embedId: 'aVY5wG5_kZ0' },
+    { title: '歌唱共鳴技巧合集', url: 'https://www.youtube.com/playlist?list=PLVhWnCDolQxzUVQAdw7enQyBzviBeGhw9', embedId: null },
+  ],
 };
 
 const EXERCISE_8: Exercise = {
@@ -212,7 +233,10 @@ const EXERCISE_8: Exercise = {
     '八度跳躍中間有「斷層」→ 氣息持續供給，不要中斷',
   ],
   verification: '滑音平滑無斷層；八度跳躍喉頭穩定。',
-  videoUrl: 'https://www.youtube.com/watch?v=1dZye8lNck4',
+  videos: [
+    { title: 'Lip trill 幫你輕鬆唱高低音', url: 'https://www.youtube.com/shorts/6aZhTBywL28', embedId: '6aZhTBywL28' },
+    { title: '滑音練習 Say or Sing', url: 'https://www.youtube.com/playlist?list=PLzANh4rNycJWYDyQVjx4_mmkYuPc8vHFc', embedId: null },
+  ],
 };
 
 const EXERCISE_9: Exercise = {
@@ -230,7 +254,10 @@ const EXERCISE_9: Exercise = {
     '跨音區時音色突變 → 想像聲音是一條絲帶，平滑過渡',
   ],
   verification: '漸強漸弱平穩不抖；跨音區滑音無斷層。',
-  videoUrl: 'https://www.youtube.com/watch?v=kCGhNlRjp_o',
+  videos: [
+    { title: '流行唱法系統課程', url: 'https://www.youtube.com/watch?v=lo0oxUT9Iyg', embedId: 'lo0oxUT9Iyg' },
+    { title: '張喜秋談換聲技術', url: 'https://www.youtube.com/watch?v=wDq0bnSfMUc', embedId: 'wDq0bnSfMUc' },
+  ],
 };
 
 const EXERCISE_10: Exercise = {
@@ -248,7 +275,10 @@ const EXERCISE_10: Exercise = {
     '閉口音太「鼻」→ 氣息從口腔和鼻腔同時流出',
   ],
   verification: '在換聲區附近，聲音自然混合，沒有突然的「斷層」或「變虛」。',
-  videoUrl: 'https://www.youtube.com/watch?v=JeB7ynYpJLM',
+  videos: [
+    { title: '混声练习，告別声音断层', url: 'https://www.youtube.com/watch?v=Kwwd9kAKRPc', embedId: 'Kwwd9kAKRPc' },
+    { title: '闭口哼鸣转开口哼鸣', url: 'https://www.youtube.com/watch?v=uxWBOEO9TiQ', embedId: 'uxWBOEO9TiQ' },
+  ],
 };
 
 const EXERCISE_11: Exercise = {
@@ -266,7 +296,10 @@ const EXERCISE_11: Exercise = {
     '過了換聲區聲音變虛 → 保持混聲狀態，不要退縮',
   ],
   verification: '在 C5 以下都能用混聲穩定發聲；混聲有力不虛、不喊。',
-  videoUrl: 'https://www.youtube.com/watch?v=3bFRooM15rA',
+  videos: [
+    { title: '开口音闭口音基本功练习', url: 'https://www.youtube.com/watch?v=5t-sYIJVm3s', embedId: '5t-sYIJVm3s' },
+    { title: '真假混声练习详细过程', url: 'https://www.youtube.com/watch?v=DGLrUso1SZg', embedId: 'DGLrUso1SZg' },
+  ],
 };
 
 // ============================================================
@@ -283,8 +316,8 @@ const phase1DayContent: Omit<DayContent, 'day'> = {
   solution: '氣息不夠用、聲音虛弱無力',
   warmup: WARMUP,
   warmupVideos: [
-    { label: '唇顫音示範', url: 'https://www.youtube.com/watch?v=cr5wG1xBfDE' },
-    { label: '打嘟嚕練習', url: 'https://www.youtube.com/watch?v=Z57HMfwbvMg' },
+    { label: '唇顫音示範', url: 'https://www.youtube.com/watch?v=Ilo4763GuTw', embedId: 'Ilo4763GuTw' },
+    { label: '彈唇練習', url: 'https://www.youtube.com/watch?v=x71n8O2hPOM', embedId: 'x71n8O2hPOM' },
   ],
   exercises: [EXERCISE_1, EXERCISE_2, EXERCISE_3],
   schedule: [
@@ -308,8 +341,8 @@ const phase2DayContent: Omit<DayContent, 'day'> = {
   review: '每天前 3 分鐘做腹式呼吸（練習一）',
   warmup: WARMUP,
   warmupVideos: [
-    { label: '唇顫音示範', url: 'https://www.youtube.com/watch?v=cr5wG1xBfDE' },
-    { label: '打嘟嚕練習', url: 'https://www.youtube.com/watch?v=Z57HMfwbvMg' },
+    { label: '唇顫音示範', url: 'https://www.youtube.com/watch?v=Ilo4763GuTw', embedId: 'Ilo4763GuTw' },
+    { label: '彈唇練習', url: 'https://www.youtube.com/watch?v=x71n8O2hPOM', embedId: 'x71n8O2hPOM' },
   ],
   exercises: [EXERCISE_4, EXERCISE_5],
   schedule: [
@@ -333,8 +366,8 @@ const phase3DayContent: Omit<DayContent, 'day'> = {
   review: '每天前 2 分鐘腹式呼吸 + 2 分鐘胸腔共鳴',
   warmup: WARMUP,
   warmupVideos: [
-    { label: '唇顫音示範', url: 'https://www.youtube.com/watch?v=cr5wG1xBfDE' },
-    { label: '打嘟嚕練習', url: 'https://www.youtube.com/watch?v=Z57HMfwbvMg' },
+    { label: '唇顫音示範', url: 'https://www.youtube.com/watch?v=Ilo4763GuTw', embedId: 'Ilo4763GuTw' },
+    { label: '彈唇練習', url: 'https://www.youtube.com/watch?v=x71n8O2hPOM', embedId: 'x71n8O2hPOM' },
   ],
   exercises: [EXERCISE_6, EXERCISE_7],
   schedule: [
@@ -358,8 +391,8 @@ const phase4DayContent: Omit<DayContent, 'day'> = {
   review: '每天前複習氣息 + 胸腔 + 頭腔各 1–2 分鐘',
   warmup: WARMUP,
   warmupVideos: [
-    { label: '唇顫音示範', url: 'https://www.youtube.com/watch?v=cr5wG1xBfDE' },
-    { label: '打嘟嚕練習', url: 'https://www.youtube.com/watch?v=Z57HMfwbvMg' },
+    { label: '唇顫音示範', url: 'https://www.youtube.com/watch?v=Ilo4763GuTw', embedId: 'Ilo4763GuTw' },
+    { label: '彈唇練習', url: 'https://www.youtube.com/watch?v=x71n8O2hPOM', embedId: 'x71n8O2hPOM' },
   ],
   exercises: [EXERCISE_8, EXERCISE_9],
   schedule: [
@@ -382,8 +415,8 @@ const phase5DayContent: Omit<DayContent, 'day'> = {
   review: '全身熱身 + 氣息 + 胸腔 + 頭腔快速複習',
   warmup: WARMUP,
   warmupVideos: [
-    { label: '唇顫音示範', url: 'https://www.youtube.com/watch?v=cr5wG1xBfDE' },
-    { label: '打嘟嚕練習', url: 'https://www.youtube.com/watch?v=Z57HMfwbvMg' },
+    { label: '唇顫音示範', url: 'https://www.youtube.com/watch?v=Ilo4763GuTw', embedId: 'Ilo4763GuTw' },
+    { label: '彈唇練習', url: 'https://www.youtube.com/watch?v=x71n8O2hPOM', embedId: 'x71n8O2hPOM' },
   ],
   exercises: [EXERCISE_10, EXERCISE_11],
   schedule: [

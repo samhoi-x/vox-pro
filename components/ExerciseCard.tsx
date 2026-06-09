@@ -2,6 +2,7 @@
 
 import { useState, useRef, useCallback, useEffect } from "react";
 import type { Exercise } from "@/lib/content";
+import VideoModal from "@/components/VideoModal";
 
 type Props = {
   exercise: Exercise;
@@ -16,6 +17,7 @@ export default function ExerciseCard({ exercise, index, phase, phaseName }: Prop
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [audioError, setAudioError] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [modalVideo, setModalVideo] = useState<{ title: string; url: string; embedId: string | null } | null>(null);
 
   // Parse duration to seconds for mini timer
   const durationSeconds = (() => {
@@ -239,21 +241,55 @@ export default function ExerciseCard({ exercise, index, phase, phaseName }: Prop
             )}
           </div>
 
-          {/* Video guide */}
-          {exercise.videoUrl && (
+          {/* Videos section */}
+          {exercise.videos && exercise.videos.length > 0 && (
             <div>
-              <a
-                href={exercise.videoUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={(e) => e.stopPropagation()}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg
-                           bg-red-500/10 text-red-400 font-medium text-sm
-                           hover:bg-red-500/20 transition-colors"
-              >
-                📺 示範影片
-              </a>
+              <h5 className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wide mb-2">
+                📺 相關示範影片
+              </h5>
+              <div className="flex flex-wrap gap-2">
+                {exercise.videos.map((video, vIdx) => (
+                  video.embedId ? (
+                    <button
+                      key={vIdx}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setModalVideo(video);
+                      }}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg
+                                 bg-red-500/10 text-red-400 font-medium text-xs
+                                 hover:bg-red-500/20 transition-colors"
+                    >
+                      ▶ {video.title}
+                    </button>
+                  ) : (
+                    <a
+                      key={vIdx}
+                      href={video.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg
+                                 bg-purple-500/10 text-purple-400 font-medium text-xs
+                                 hover:bg-purple-500/20 transition-colors"
+                    >
+                      📺 {video.title}
+                    </a>
+                  )
+                ))}
+              </div>
             </div>
+          )}
+
+          {/* Video Modal */}
+          {modalVideo && (
+            <VideoModal
+              isOpen={!!modalVideo}
+              onClose={() => setModalVideo(null)}
+              title={modalVideo.title}
+              embedId={modalVideo.embedId}
+              url={modalVideo.url}
+            />
           )}
         </div>
       )}

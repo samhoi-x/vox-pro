@@ -12,6 +12,7 @@ import ProgressGrid from "@/components/ProgressGrid";
 import ThemeToggle from "@/components/ThemeToggle";
 import LangToggle from "@/components/LangToggle";
 import Paywall from "@/components/Paywall";
+import VideoModal from "@/components/VideoModal";
 
 export default function DashboardPage() {
   const { user, loading: authLoading, supabase } = useAuth();
@@ -21,6 +22,7 @@ export default function DashboardPage() {
   const [subscriptionTier, setSubscriptionTier] = useState<string>("free");
   const [dataLoading, setDataLoading] = useState(true);
   const [toggling, setToggling] = useState(false);
+  const [warmupModal, setWarmupModal] = useState<{ label: string; url: string; embedId: string | null } | null>(null);
 
   // ── Load progress + subscription on mount ──────────────────────
   useEffect(() => {
@@ -300,17 +302,29 @@ export default function DashboardPage() {
             {dayContent.warmupVideos && dayContent.warmupVideos.length > 0 && (
               <div className="flex flex-wrap gap-2">
                 {dayContent.warmupVideos.map((video, i) => (
-                  <a
-                    key={i}
-                    href={video.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg
-                               bg-red-500/10 text-red-400 text-xs font-medium
-                               hover:bg-red-500/20 transition-colors"
-                  >
-                    📺 {video.label}
-                  </a>
+                  video.embedId ? (
+                    <button
+                      key={i}
+                      onClick={() => setWarmupModal(video)}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg
+                                 bg-red-500/10 text-red-400 text-xs font-medium
+                                 hover:bg-red-500/20 transition-colors"
+                    >
+                      ▶ {video.label}
+                    </button>
+                  ) : (
+                    <a
+                      key={i}
+                      href={video.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg
+                                 bg-purple-500/10 text-purple-400 text-xs font-medium
+                                 hover:bg-purple-500/20 transition-colors"
+                    >
+                      📺 {video.label}
+                    </a>
+                  )
                 ))}
               </div>
             )}
@@ -433,6 +447,17 @@ export default function DashboardPage() {
 
         {/* Bottom spacer for mobile nav */}
         <div className="h-4" />
+
+        {/* Warmup Video Modal */}
+        {warmupModal && (
+          <VideoModal
+            isOpen={!!warmupModal}
+            onClose={() => setWarmupModal(null)}
+            title={warmupModal.label}
+            embedId={warmupModal.embedId}
+            url={warmupModal.url}
+          />
+        )}
       </div>
     </div>
   );
