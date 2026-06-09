@@ -31,98 +31,102 @@ const WHITE_KEY_HEIGHT = 160;
 const BLACK_KEY_WIDTH = 28;
 const BLACK_KEY_HEIGHT = 100;
 
+// ── Global singleton AudioContext (survives React re-renders) ──
+// Must be created inside a user gesture on Safari.
+let _globalCtx: AudioContext | null = null;
+let _ctxReady = false;
+
+function getGlobalCtx(): AudioContext | null {
+  if (!_globalCtx) {
+    try {
+      const A = window.AudioContext || (window as any).webkitAudioContext;
+      _globalCtx = new A();
+    } catch {
+      return null;
+    }
+  }
+  return _globalCtx;
+}
+
+async function ensureCtxReady(): Promise<AudioContext | null> {
+  const ctx = getGlobalCtx();
+  if (!ctx) return null;
+  if (ctx.state === "suspended") {
+    // Safari: resume must happen directly inside a user gesture.
+    // We call resume() and wait for it to complete.
+    try {
+      await ctx.resume();
+    } catch {
+      // Some Safari versions throw if not in gesture — retry on next click
+      return null;
+    }
+  }
+  _ctxReady = ctx.state === "running";
+  return _ctxReady ? ctx : null;
+}
+
 export default function PianoScale() {
-  // ── Safari-compatible audio state ──────────────────────────────
-  // Safari requires AudioContext to be created INSIDE a user gesture.
-  // We store the raw context (not wrapped in useCallback promises).
-  const ctxRef = useRef<AudioContext | null>(null);
-  // Track if context was ever resumed successfully
-  const ctxReadyRef = useRef(false);
   const activeOscRef = useRef<OscillatorNode | null>(null);
   const gainNodeRef = useRef<GainNode | null>(null);
   const [playing, setPlaying] = useState<string | null>(null);
   const [sequencePlaying, setSequencePlaying] = useState(false);
 
-  // Cleanup on unmount
+  // ── Native event listener for first-touch audio init (bypasses React) ──
+  const containerRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
-    return () => {
-      try { activeOscRef.current?.stop(); } catch {}
-      try { ctxRef.current?.close(); } catch {}
+    const el = containerRef.current;
+    if (!el) return;
+
+    const initAudio = () => {
+      // Just creating the AudioContext inside a native gesture handler
+      // is enough for Safari to allow playback later.
+      getGlobalCtx();
     };
-  }, []);
 
-  // ── Safari-safe: create AudioContext inside the user gesture ──
-  const ensureCtx = useCallback((): AudioContext | null => {
-    // Already have a running context
-    if (ctxRef.current && ctxReadyRef.current) return ctxRef.current;
+    // Use native events — Safari trusts these more than React synthetic events
+    el.addEventListener("mousedown", initAudio, { once: true });
+    el.addEventListener("touchstart", initAudio, { once: true, passive: true });
 
-    // Create on first use (happens inside click → Safari allows it)
-    if (!ctxRef.current) {
-      try {
-        const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
-        ctxRef.current = new AudioCtx();
-      } catch {
-        return null;
-      }
-    }
-
-    // Resume if suspended (Safari starts in "suspended" state)
-    const ctx = ctxRef.current;
-    if (ctx.state === "suspended") {
-      // Fire resume — don't await, we use the context below synchronously
-      ctx.resume().then(() => {
-        ctxReadyRef.current = true;
-      });
-      // Mark as ready optimistically — Safari should process resume quickly
-      ctxReadyRef.current = true;
-    } else {
-      ctxReadyRef.current = true;
-    }
-
-    return ctx;
-  }, []);
-
-  const stopActive = useCallback(() => {
-    if (activeOscRef.current) {
-      try { activeOscRef.current.stop(); } catch {}
-      activeOscRef.current = null;
-    }
-    if (gainNodeRef.current) {
-      try { gainNodeRef.current.disconnect(); } catch {}
-      gainNodeRef.current = null;
-    }
+    return () => {
+      el.removeEventListener("mousedown", initAudio);
+      el.removeEventListener("touchstart", initAudio);
+      try { activeOscRef.current?.stop(); } catch {}
+      try { _globalCtx?.close(); _globalCtx = null; _ctxReady = false; } catch {}
+    };
   }, []);
 
   // ── Core note player ──────────────────────────────────────────
   const playNoteNow = useCallback(
     (freq: number, note: string, durationMs: number) => {
-      const ctx = ctxRef.current;
-      if (!ctx || !ctxReadyRef.current) return;
+      const ctx = _globalCtx;
+      if (!ctx || !_ctxReady) return;
 
-      stopActive();
-
-      // Safari: if context got suspended again, try to resume
-      if (ctx.state === "suspended") {
-        ctx.resume();
+      // Stop previous note
+      if (activeOscRef.current) {
+        try { activeOscRef.current.stop(); } catch {}
+        activeOscRef.current = null;
+      }
+      if (gainNodeRef.current) {
+        try { gainNodeRef.current.disconnect(); } catch {}
+        gainNodeRef.current = null;
       }
 
+      const now = ctx.currentTime;
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
 
       osc.type = "sine";
-      osc.frequency.setValueAtTime(freq, ctx.currentTime);
+      osc.frequency.setValueAtTime(freq, now);
 
-      gain.gain.setValueAtTime(0.3, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(
-        0.001,
-        ctx.currentTime + durationMs / 1000
-      );
+      gain.gain.setValueAtTime(0.3, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + durationMs / 1000);
 
       osc.connect(gain);
       gain.connect(ctx.destination);
 
-      osc.start(ctx.currentTime);
-      osc.stop(ctx.currentTime + durationMs / 1000 + 0.05);
+      osc.start(now);
+      osc.stop(now + durationMs / 1000 + 0.05);
 
       activeOscRef.current = osc;
       gainNodeRef.current = gain;
@@ -130,28 +134,16 @@ export default function PianoScale() {
       setPlaying(note);
       setTimeout(() => setPlaying(null), durationMs + 100);
     },
-    [stopActive]
+    []
   );
 
   const playNote = useCallback(
-    (freq: number, note: string, durationMs: number = 600) => {
-      const ctx = ensureCtx();
+    async (freq: number, note: string, durationMs: number = 600) => {
+      const ctx = await ensureCtxReady();
       if (!ctx) return;
-
-      // If context was just created (first click), it's still in "suspended".
-      // Wait briefly for Safari to process resume, then play.
-      if (ctx.state === "suspended") {
-        // Resume was called in ensureCtx. Chain the play after resume completes.
-        ctx.resume().then(() => {
-          ctxReadyRef.current = true;
-          playNoteNow(freq, note, durationMs);
-        });
-      } else {
-        ctxReadyRef.current = true;
-        playNoteNow(freq, note, durationMs);
-      }
+      playNoteNow(freq, note, durationMs);
     },
-    [ensureCtx, playNoteNow]
+    [playNoteNow]
   );
 
   // ── Sequence player ───────────────────────────────────────────
@@ -160,24 +152,24 @@ export default function PianoScale() {
       if (sequencePlaying) return;
       setSequencePlaying(true);
 
+      // Ensure audio is ready
+      const ctx = await ensureCtxReady();
+      if (!ctx) {
+        setSequencePlaying(false);
+        return;
+      }
+
       const whiteKeys = KEYS.filter((k) => !k.isBlack);
       const order = ascending ? whiteKeys : [...whiteKeys].reverse();
 
       for (let i = 0; i < order.length; i++) {
-        const key = order[i];
-        // Use playNoteNow directly (context is already ensured by first note)
-        const ctx = ctxRef.current;
-        if (ctx && ctxReadyRef.current) {
-          playNoteNow(key.freq, key.note, 400);
-        } else {
-          playNote(key.freq, key.note, 400);
-        }
+        playNoteNow(order[i].freq, order[i].note, 400);
         await new Promise<void>((resolve) => setTimeout(resolve, 500));
       }
 
       setSequencePlaying(false);
     },
-    [playNote, playNoteNow, sequencePlaying]
+    [playNoteNow, sequencePlaying]
   );
 
   // ── Layout ────────────────────────────────────────────────────
@@ -185,13 +177,16 @@ export default function PianoScale() {
   const totalWhiteWidth = whiteKeys.length * WHITE_KEY_WIDTH;
 
   return (
-    <div className="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-4">
+    <div
+      ref={containerRef}
+      className="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-4"
+    >
       <h3 className="text-center text-lg font-semibold mb-4 text-[var(--text)]">
         🎹 音階輔助（點擊發聲）
       </h3>
 
       <div
-        className="relative mx-auto"
+        className="relative mx-auto select-none"
         style={{ width: totalWhiteWidth, height: WHITE_KEY_HEIGHT + 8 }}
       >
         {/* White keys */}
@@ -199,10 +194,10 @@ export default function PianoScale() {
           {whiteKeys.map((key) => (
             <button
               key={key.note}
-              onPointerDown={() => playNote(key.freq, key.note)}
+              onClick={() => playNote(key.freq, key.note)}
               className={`
                 border border-[var(--border)] rounded-b-md cursor-pointer
-                transition-all duration-100 select-none touch-manipulation
+                transition-all duration-100 touch-manipulation
                 hover:bg-[var(--surface-raised)] active:bg-[var(--accent)]/20
                 ${playing === key.note ? "bg-[var(--accent)]/30" : "bg-[var(--bg)]"}
               `}
@@ -226,10 +221,10 @@ export default function PianoScale() {
           return (
             <button
               key={key.note}
-              onPointerDown={() => playNote(key.freq, key.note)}
+              onClick={() => playNote(key.freq, key.note)}
               className={`
                 absolute top-0 rounded-b-md cursor-pointer
-                transition-all duration-100 select-none touch-manipulation z-10
+                transition-all duration-100 touch-manipulation z-10
                 hover:bg-[#3a3a50] active:bg-[var(--accent)]/40
                 ${playing === key.note ? "bg-[var(--accent)]/50" : "bg-[#1a1a2e]"}
               `}
