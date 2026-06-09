@@ -52,7 +52,7 @@ export default function LangToggle() {
 
       // Check if already loaded via CDN script tag
       if ((window as any).OpenCC) {
-        const converter = new (window as any).OpenCC.Converter("tw", "cn");
+        const converter = new (window as any).OpenCC.Converter({ from: "tw", to: "cn" });
         const fn = (text: string) => converter(text);
         converterRef.current = fn;
         return fn;
@@ -72,7 +72,7 @@ export default function LangToggle() {
         throw new Error("OpenCC not available after script load");
       }
 
-      const converter = new (window as any).OpenCC.Converter("tw", "cn");
+      const converter = new (window as any).OpenCC.Converter({ from: "tw", to: "cn" });
       const fn = (text: string) => converter(text);
       converterRef.current = fn;
       return fn;
