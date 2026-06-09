@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useCallback, useState, useEffect } from "react";
+import { useCallback, useState } from "react";
 
 interface PianoKey {
   note: string;
@@ -31,105 +31,87 @@ const WHITE_KEY_HEIGHT = 160;
 const BLACK_KEY_WIDTH = 28;
 const BLACK_KEY_HEIGHT = 100;
 
-// ── Global singleton AudioContext (survives React re-renders) ──
-// Must be created inside a user gesture on Safari.
-let _globalCtx: AudioContext | null = null;
-let _ctxReady = false;
+// ── WAV generator (no Web Audio API needed) ─────────────────────
+function generateWavBlob(freq: number, durationSec: number): Blob {
+  const sampleRate = 44100;
+  const numSamples = Math.floor(sampleRate * durationSec);
+  const buffer = new ArrayBuffer(44 + numSamples * 2);
+  const view = new DataView(buffer);
 
-function getGlobalCtx(): AudioContext | null {
-  if (!_globalCtx) {
-    try {
-      const A = window.AudioContext || (window as any).webkitAudioContext;
-      _globalCtx = new A();
-    } catch {
-      return null;
+  // WAV header
+  const writeStr = (off: number, s: string) => {
+    for (let i = 0; i < s.length; i++) view.setUint8(off + i, s.charCodeAt(i));
+  };
+  writeStr(0, "RIFF");
+  view.setUint32(4, 36 + numSamples * 2, true);
+  writeStr(8, "WAVE");
+  writeStr(12, "fmt ");
+  view.setUint32(16, 16, true);          // chunk size
+  view.setUint16(20, 1, true);           // PCM
+  view.setUint16(22, 1, true);           // mono
+  view.setUint32(24, sampleRate, true);
+  view.setUint32(28, sampleRate * 2, true); // byte rate
+  view.setUint16(32, 2, true);           // block align
+  view.setUint16(34, 16, true);          // bits per sample
+  writeStr(36, "data");
+  view.setUint32(40, numSamples * 2, true);
+
+  // Sine wave samples with fade-out
+  const fadeStart = Math.floor(numSamples * 0.8);
+  for (let i = 0; i < numSamples; i++) {
+    const t = i / sampleRate;
+    let amplitude = 0.3;
+    // Fade out in last 20%
+    if (i >= fadeStart) {
+      amplitude *= 1 - (i - fadeStart) / (numSamples - fadeStart);
     }
+    // Apply quick fade-in (5ms) to avoid click
+    if (i < Math.floor(sampleRate * 0.005)) {
+      amplitude *= i / (sampleRate * 0.005);
+    }
+    const sample = Math.sin(2 * Math.PI * freq * t) * amplitude;
+    const int16 = Math.max(-32768, Math.min(32767, Math.floor(sample * 32767)));
+    view.setInt16(44 + i * 2, int16, true);
   }
-  return _globalCtx;
+
+  return new Blob([buffer], { type: "audio/wav" });
 }
 
-async function ensureCtxReady(): Promise<AudioContext | null> {
-  const ctx = getGlobalCtx();
-  if (!ctx) return null;
-  if (ctx.state === "suspended") {
-    // Safari: resume must happen directly inside a user gesture.
-    // We call resume() and wait for it to complete.
-    try {
-      await ctx.resume();
-    } catch {
-      // Some Safari versions throw if not in gesture — retry on next click
-      return null;
-    }
+// Cache generated WAV URLs (one per frequency+duration pair)
+const wavCache = new Map<string, string>();
+
+function getWavUrl(freq: number, durationSec: number): string {
+  const key = `${freq}_${durationSec}`;
+  if (!wavCache.has(key)) {
+    const blob = generateWavBlob(freq, durationSec);
+    wavCache.set(key, URL.createObjectURL(blob));
   }
-  _ctxReady = ctx.state === "running";
-  return _ctxReady ? ctx : null;
+  return wavCache.get(key)!;
+}
+
+// ── Play using HTMLAudioElement (works everywhere) ──────────────
+function playWav(freq: number, durationMs: number): HTMLAudioElement {
+  const url = getWavUrl(freq, durationMs / 1000);
+  const audio = new Audio(url);
+  audio.play().catch(() => {}); // ignore autoplay errors (won't happen on click)
+  return audio;
 }
 
 export default function PianoScale() {
-  const activeOscRef = useRef<OscillatorNode | null>(null);
-  const gainNodeRef = useRef<GainNode | null>(null);
   const [playing, setPlaying] = useState<string | null>(null);
   const [sequencePlaying, setSequencePlaying] = useState(false);
+  const activeAudioRef = { current: null as HTMLAudioElement | null };
 
-  // ── Native event listener for first-touch audio init (bypasses React) ──
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
-
-    const initAudio = () => {
-      // Just creating the AudioContext inside a native gesture handler
-      // is enough for Safari to allow playback later.
-      getGlobalCtx();
-    };
-
-    // Use native events — Safari trusts these more than React synthetic events
-    el.addEventListener("mousedown", initAudio, { once: true });
-    el.addEventListener("touchstart", initAudio, { once: true, passive: true });
-
-    return () => {
-      el.removeEventListener("mousedown", initAudio);
-      el.removeEventListener("touchstart", initAudio);
-      try { activeOscRef.current?.stop(); } catch {}
-      try { _globalCtx?.close(); _globalCtx = null; _ctxReady = false; } catch {}
-    };
-  }, []);
-
-  // ── Core note player ──────────────────────────────────────────
-  const playNoteNow = useCallback(
-    (freq: number, note: string, durationMs: number) => {
-      const ctx = _globalCtx;
-      if (!ctx || !_ctxReady) return;
-
+  const playNote = useCallback(
+    (freq: number, note: string, durationMs: number = 600) => {
       // Stop previous note
-      if (activeOscRef.current) {
-        try { activeOscRef.current.stop(); } catch {}
-        activeOscRef.current = null;
-      }
-      if (gainNodeRef.current) {
-        try { gainNodeRef.current.disconnect(); } catch {}
-        gainNodeRef.current = null;
+      if (activeAudioRef.current) {
+        activeAudioRef.current.pause();
+        activeAudioRef.current = null;
       }
 
-      const now = ctx.currentTime;
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-
-      osc.type = "sine";
-      osc.frequency.setValueAtTime(freq, now);
-
-      gain.gain.setValueAtTime(0.3, now);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + durationMs / 1000);
-
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-
-      osc.start(now);
-      osc.stop(now + durationMs / 1000 + 0.05);
-
-      activeOscRef.current = osc;
-      gainNodeRef.current = gain;
+      const audio = playWav(freq, durationMs);
+      activeAudioRef.current = audio;
 
       setPlaying(note);
       setTimeout(() => setPlaying(null), durationMs + 100);
@@ -137,39 +119,22 @@ export default function PianoScale() {
     []
   );
 
-  const playNote = useCallback(
-    async (freq: number, note: string, durationMs: number = 600) => {
-      const ctx = await ensureCtxReady();
-      if (!ctx) return;
-      playNoteNow(freq, note, durationMs);
-    },
-    [playNoteNow]
-  );
-
-  // ── Sequence player ───────────────────────────────────────────
   const playSequence = useCallback(
     async (ascending: boolean) => {
       if (sequencePlaying) return;
       setSequencePlaying(true);
 
-      // Ensure audio is ready
-      const ctx = await ensureCtxReady();
-      if (!ctx) {
-        setSequencePlaying(false);
-        return;
-      }
-
       const whiteKeys = KEYS.filter((k) => !k.isBlack);
       const order = ascending ? whiteKeys : [...whiteKeys].reverse();
 
       for (let i = 0; i < order.length; i++) {
-        playNoteNow(order[i].freq, order[i].note, 400);
+        playNote(order[i].freq, order[i].note, 400);
         await new Promise<void>((resolve) => setTimeout(resolve, 500));
       }
 
       setSequencePlaying(false);
     },
-    [playNoteNow, sequencePlaying]
+    [playNote, sequencePlaying]
   );
 
   // ── Layout ────────────────────────────────────────────────────
@@ -177,10 +142,7 @@ export default function PianoScale() {
   const totalWhiteWidth = whiteKeys.length * WHITE_KEY_WIDTH;
 
   return (
-    <div
-      ref={containerRef}
-      className="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-4"
-    >
+    <div className="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-4">
       <h3 className="text-center text-lg font-semibold mb-4 text-[var(--text)]">
         🎹 音階輔助（點擊發聲）
       </h3>
