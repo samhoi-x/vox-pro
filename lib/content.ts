@@ -214,7 +214,7 @@ const EXERCISE_7: Exercise = {
   verification: '頭腔聲音明亮、集中、不費力；從閉口到開口位置一致。',
   videos: [
     { title: '哼鳴練習讓聲音集中有共鳴', url: 'https://www.youtube.com/watch?v=aVY5wG5_kZ0', embedId: 'aVY5wG5_kZ0' },
-    { title: '歌唱共鳴技巧合集', url: 'https://www.youtube.com/playlist?list=PLVhWnCDolQxzUVQAdw7enQyBzviBeGhw9', embedId: null },
+    { title: '歌唱共鳴技巧合集', url: 'https://www.youtube.com/playlist?list=PLVhWnCDolQxzUVQAdw7enQyBzviBeGhw9', embedId: 'videoseries?list=PLVhWnCDolQxzUVQAdw7enQyBzviBeGhw9' },
   ],
 };
 

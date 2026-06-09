@@ -68,11 +68,11 @@ export default function VideoModal({ isOpen, onClose, title, embedId, url }: Pro
 
         {/* Content */}
         {embedId ? (
-          /* Embedded YouTube iframe */
+          /* Embedded YouTube iframe (supports both videos and playlists) */
           <div className="relative w-full" style={{ paddingBottom: "56.25%" }}>
             <iframe
               className="absolute inset-0 w-full h-full"
-              src={`https://www.youtube.com/embed/${embedId}?autoplay=1&rel=0`}
+              src={`https://www.youtube.com/embed/${embedId}${embedId.includes("?") ? "&" : "?"}autoplay=1&rel=0`}
               title={title}
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               allowFullScreen
