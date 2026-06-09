@@ -127,11 +127,25 @@ export default function DashboardPage() {
         {/* ========================================================
             HEADER: title + toolbar
            ======================================================== */}
-        <header className="flex items-center justify-between">
-          <h1 className="text-xl sm:text-2xl font-black text-[var(--text)] tracking-tight">
-            🎤 Vox Pro
-          </h1>
+        <header className="flex items-center justify-between flex-wrap gap-3">
+          <div className="flex items-center gap-3">
+            <h1 className="text-xl sm:text-2xl font-black text-[var(--text)] tracking-tight">
+              🎤 Vox Pro
+            </h1>
+            <span className="text-xs text-[var(--text-muted)] bg-[var(--surface)] border border-[var(--border)] px-2 py-1 rounded-full truncate max-w-[160px] sm:max-w-[200px]">
+              {user.email}
+            </span>
+          </div>
           <div className="flex items-center gap-2">
+            <button
+              onClick={async () => {
+                await supabase.auth.signOut();
+                window.location.href = "/";
+              }}
+              className="text-xs text-[var(--text-muted)] hover:text-[var(--danger)] border border-[var(--border)] hover:border-[var(--danger)] px-3 py-1.5 rounded-lg transition-colors"
+            >
+              登出
+            </button>
             <ThemeToggle />
             <LangToggle />
           </div>
