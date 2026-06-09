@@ -141,7 +141,7 @@ export default function ExerciseCard({ exercise, index, phase, phaseName }: Prop
           {/* Steps */}
           <div>
             <h5 className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wide mb-2">
-              Steps
+            步驟
             </h5>
             <ol className="space-y-3">
               {exercise.steps.map((step, sIdx) => (
@@ -178,8 +178,8 @@ export default function ExerciseCard({ exercise, index, phase, phaseName }: Prop
           {exercise.commonMistakes.length > 0 && (
             <div>
               <h5 className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wide mb-2">
-                Common Mistakes
-              </h5>
+              常見錯誤
+            </h5>
               <ul className="space-y-1.5">
                 {exercise.commonMistakes.map((mistake, mIdx) => {
                   // Parse ❌→✅ format or use as-is
@@ -214,8 +214,8 @@ export default function ExerciseCard({ exercise, index, phase, phaseName }: Prop
           {exercise.verification && (
             <div>
               <h5 className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wide mb-1.5">
-                Verification
-              </h5>
+              驗證標準
+            </h5>
               <div className="p-3 rounded-lg bg-[var(--success)]/10 border border-[var(--success)]/20">
                 <p className="text-sm text-[var(--text)]">{exercise.verification}</p>
               </div>

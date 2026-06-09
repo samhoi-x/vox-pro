@@ -28,15 +28,15 @@ export default function ProgressGrid({ completedDays, onToggleDay }: Props) {
           <div className="text-2xl font-bold text-[var(--accent)]">
             {completedCount}/{totalDays}
           </div>
-          <div className="text-[11px] text-[var(--text-muted)] mt-1">Days Completed</div>
+          <div className="text-[11px] text-[var(--text-muted)] mt-1">已完成天數</div>
         </div>
         <div className="text-center p-3 rounded-lg bg-[var(--surface-raised)]">
           <div className="text-2xl font-bold text-[var(--gold)]">{consecutiveDays}</div>
-          <div className="text-[11px] text-[var(--text-muted)] mt-1">Consecutive Days</div>
+          <div className="text-[11px] text-[var(--text-muted)] mt-1">連續天數</div>
         </div>
         <div className="text-center p-3 rounded-lg bg-[var(--surface-raised)]">
           <div className="text-2xl font-bold text-[var(--success)]">{percent}%</div>
-          <div className="text-[11px] text-[var(--text-muted)] mt-1">Total Progress</div>
+          <div className="text-[11px] text-[var(--text-muted)] mt-1">總進度</div>
         </div>
       </div>
 
@@ -63,7 +63,7 @@ export default function ProgressGrid({ completedDays, onToggleDay }: Props) {
                   isCompleted ? "text-[var(--success)]" : "text-[var(--text-muted)]"
                 }`}
               >
-                Day {day}
+                第{day}日
               </span>
               <span className="text-lg">{isCompleted ? "⭐" : "☆"}</span>
             </button>
