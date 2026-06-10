@@ -40,10 +40,10 @@ export async function POST(request: Request) {
     });
 
     return NextResponse.json({ url: checkout.checkoutUrl });
-  } catch (error: any) {
+  } catch (error) {
     console.error("Creem checkout error:", error);
     return NextResponse.json(
-      { error: error.message || "建立付款連結失敗" },
+      { error: error instanceof Error ? error.message : "建立付款連結失敗" },
       { status: 500 },
     );
   }

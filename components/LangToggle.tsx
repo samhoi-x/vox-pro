@@ -20,21 +20,12 @@ function getStoredLang(): DisplayMode {
 }
 
 export default function LangToggle() {
-  const [displayMode, setDisplayMode] = useState<DisplayMode>("traditional");
+  // Lazy init reads the stored language on the client; SSR falls back to traditional
+  const [displayMode, setDisplayMode] = useState<DisplayMode>(getStoredLang);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const converterRef = useRef<((text: string) => Promise<string>) | null>(null);
   const convertingRef = useRef(false);
-
-  // Initialize on mount
-  useEffect(() => {
-    const stored = getStoredLang();
-    setDisplayMode(stored);
-    if (stored === "simplified") {
-      loadAndConvert();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   const loadConverter = useCallback(async () => {
     if (converterRef.current) return converterRef.current;
@@ -137,6 +128,15 @@ export default function LangToggle() {
     convertingRef.current = false;
   }, [loadConverter, storeOriginals]);
 
+  // Re-apply simplified conversion on mount if it was previously enabled
+  useEffect(() => {
+    if (getStoredLang() === "simplified") {
+      document.documentElement.setAttribute("data-lang", "simplified");
+      loadAndConvert();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const toggle = useCallback(async () => {
     if (loading) return;
 
@@ -166,6 +166,7 @@ export default function LangToggle() {
                    disabled:opacity-50 disabled:cursor-not-allowed"
         aria-label={`切換至${displayMode === "traditional" ? "簡體" : "繁體"}中文`}
         title={`切換至${displayMode === "traditional" ? "簡體" : "繁體"}中文`}
+        suppressHydrationWarning
       >
         {displayMode === "traditional" ? "简" : "繁"}
       </button>

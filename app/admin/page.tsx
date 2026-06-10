@@ -3,6 +3,9 @@
 import { useAuth } from "@/components/AuthProvider";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useCallback } from "react";
+import { getTrialEnd } from "@/lib/trial";
+
+const ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL || "iatsam@gmail.com";
 
 // ── Types ──────────────────────────────────────────────────────────
 interface Stats {
@@ -39,10 +42,10 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [updating, setUpdating] = useState<string | null>(null);
+  // Snapshot of "now" for trial-status display (page data isn't live anyway)
+  const [now] = useState(() => Date.now());
 
-  // ── Auth guard (email-based) ───────────────────────────────────
-  const ADMIN_EMAIL = "iatsam@gmail.com";
-
+  // ── Auth guard (email-based; real enforcement is server-side) ──
   useEffect(() => {
     if (user && user.email !== ADMIN_EMAIL) {
       router.replace("/dashboard");
@@ -134,9 +137,9 @@ export default function AdminPage() {
   const trialStatus = (u: User) => {
     if (!u.trial_started_at) return { label: "—", color: "text-gray-600" };
     if (u.subscription_tier !== "free") return { label: "已升級", color: "text-purple-400" };
-    const end = new Date(new Date(u.trial_started_at).getTime() + 72 * 60 * 60 * 1000);
-    if (new Date() > end) return { label: "已過期", color: "text-red-400" };
-    const hours = Math.floor((end.getTime() - Date.now()) / (1000 * 60 * 60));
+    const end = getTrialEnd(u.trial_started_at);
+    if (now > end.getTime()) return { label: "已過期", color: "text-red-400" };
+    const hours = Math.floor((end.getTime() - now) / (1000 * 60 * 60));
     return { label: `${Math.floor(hours / 24)}d ${hours % 24}h`, color: "text-emerald-400" };
   };
 

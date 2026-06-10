@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/server";
-import { createHmac } from "crypto";
-import { PRO_LIFETIME_ID, getTierForProduct } from "@/lib/creem";
+import { createHmac, timingSafeEqual } from "crypto";
+import { getTierForProduct } from "@/lib/creem";
 
 function verifyCreemSignature(
   payload: string,
@@ -10,8 +10,11 @@ function verifyCreemSignature(
 ): boolean {
   const computed = createHmac("sha256", secret)
     .update(payload)
-    .digest("hex");
-  return computed === signature;
+    .digest();
+  const provided = Buffer.from(signature, "hex");
+  return (
+    provided.length === computed.length && timingSafeEqual(computed, provided)
+  );
 }
 
 export async function POST(request: Request) {
@@ -23,7 +26,25 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
   }
 
-  let event: any;
+  interface CreemEvent {
+    type?: string;
+    data?: {
+      id?: string;
+      metadata?: { user_id?: string; product_id?: string };
+      order_id?: string;
+      subscription_id?: string;
+      product_id?: string;
+      customer_id?: string;
+      current_period_start?: string;
+      current_period_end?: string;
+      subscription?: {
+        current_period_start?: string;
+        current_period_end?: string;
+      };
+    };
+  }
+
+  let event: CreemEvent;
   try {
     event = JSON.parse(body);
   } catch {
@@ -46,18 +67,23 @@ export async function POST(request: Request) {
         // ── Subscription checkout (monthly pro) ──
         if (subscriptionId) {
           const subData = event.data?.subscription;
-          await supabase.from("subscriptions").upsert({
-            user_id: userId,
-            creem_subscription_id: subscriptionId,
-            creem_product_id: productId,
-            status: "active",
-            current_period_start: subData?.current_period_start
-              ? new Date(subData.current_period_start).toISOString()
-              : new Date().toISOString(),
-            current_period_end: subData?.current_period_end
-              ? new Date(subData.current_period_end).toISOString()
-              : null,
-          });
+          // onConflict makes retried webhooks update the existing row instead
+          // of failing on the creem_subscription_id unique constraint
+          await supabase.from("subscriptions").upsert(
+            {
+              user_id: userId,
+              creem_subscription_id: subscriptionId,
+              creem_product_id: productId,
+              status: "active",
+              current_period_start: subData?.current_period_start
+                ? new Date(subData.current_period_start).toISOString()
+                : new Date().toISOString(),
+              current_period_end: subData?.current_period_end
+                ? new Date(subData.current_period_end).toISOString()
+                : null,
+            },
+            { onConflict: "creem_subscription_id" },
+          );
 
           await supabase
             .from("profiles")

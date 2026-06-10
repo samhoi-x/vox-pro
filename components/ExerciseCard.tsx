@@ -71,6 +71,14 @@ export default function ExerciseCard({ exercise, index, phase, phaseName }: Prop
     };
   }, [miniTimers]);
 
+  // Stop guide audio when the card unmounts
+  useEffect(() => {
+    return () => {
+      audioRef.current?.pause();
+      audioRef.current = null;
+    };
+  }, []);
+
   const formatMiniTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
@@ -106,7 +114,7 @@ export default function ExerciseCard({ exercise, index, phase, phaseName }: Prop
     };
 
     tryPath(0);
-  }, [exercise.id, index]);
+  }, [exercise.id, index, phase]);
 
   return (
     <div className="rounded-xl bg-[var(--surface)] border border-[var(--border)] overflow-hidden transition-all duration-200">

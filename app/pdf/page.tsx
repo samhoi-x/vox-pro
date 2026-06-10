@@ -206,12 +206,11 @@ export default function PdfDownloadPage() {
               {/* Exercises */}
               <div className="mb-4">
                 <h3 className="text-sm font-bold uppercase mb-2">🎵 練習</h3>
-                {day!.exercises.map((ex: any, i: number) => (
+                {day!.exercises.map((ex, i) => (
                   <div key={ex.id} className="bg-[#1a1a24] border border-[#2a2a3a] rounded-lg p-4 mb-3">
                     <h4 className="font-bold text-sm mb-1">
                       {i + 1}. {ex.title} <span className="text-xs text-gray-500">({ex.duration})</span>
                     </h4>
-                    <p className="text-xs text-gray-400 mb-2">{ex.instruction}</p>
                     {ex.steps && (
                       <ol className="space-y-1">
                         {ex.steps.map((s: string, j: number) => (
@@ -221,9 +220,6 @@ export default function PdfDownloadPage() {
                           </li>
                         ))}
                       </ol>
-                    )}
-                    {ex.tips && (
-                      <p className="text-xs text-amber-400 mt-2">💡 {ex.tips}</p>
                     )}
                   </div>
                 ))}

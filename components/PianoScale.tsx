@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 interface PianoKey {
   note: string;
@@ -100,7 +100,15 @@ function playWav(freq: number, durationMs: number): HTMLAudioElement {
 export default function PianoScale() {
   const [playing, setPlaying] = useState<string | null>(null);
   const [sequencePlaying, setSequencePlaying] = useState(false);
-  const activeAudioRef = { current: null as HTMLAudioElement | null };
+  const activeAudioRef = useRef<HTMLAudioElement | null>(null);
+
+  // Stop any playing note when the component unmounts
+  useEffect(() => {
+    return () => {
+      activeAudioRef.current?.pause();
+      activeAudioRef.current = null;
+    };
+  }, []);
 
   const playNote = useCallback(
     (freq: number, note: string, durationMs: number = 600) => {

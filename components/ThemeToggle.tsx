@@ -20,14 +20,13 @@ function applyTheme(theme: Theme) {
 }
 
 export default function ThemeToggle() {
-  const [theme, setTheme] = useState<Theme>("dark");
+  // Lazy init reads the stored theme on the client; SSR falls back to "dark"
+  const [theme, setTheme] = useState<Theme>(getStoredTheme);
 
-  // Initialize on mount
+  // Keep the document attribute in sync (also applies stored theme on mount)
   useEffect(() => {
-    const initial = getStoredTheme();
-    setTheme(initial);
-    applyTheme(initial);
-  }, []);
+    applyTheme(theme);
+  }, [theme]);
 
   const toggle = useCallback(() => {
     setTheme((prev) => {
@@ -46,6 +45,7 @@ export default function ThemeToggle() {
                  hover:bg-[var(--border)] transition-all duration-150 cursor-pointer"
       aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
       title={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
+      suppressHydrationWarning
     >
       {theme === "dark" ? "☀️" : "🌙"}
     </button>

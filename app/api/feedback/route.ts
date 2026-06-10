@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { Resend } from "resend";
-
-const resend = new Resend(process.env.RESEND_API_KEY);
+import { ADMIN_EMAIL } from "@/lib/admin";
 
 const CATEGORY_LABELS: Record<string, string> = {
   suggestion: "💡 建議",
@@ -19,9 +18,11 @@ export async function POST(request: Request) {
 
     const catLabel = CATEGORY_LABELS[category] || "💬 其他";
 
+    // Instantiate per-request so builds don't require RESEND_API_KEY
+    const resend = new Resend(process.env.RESEND_API_KEY);
     await resend.emails.send({
       from: "Vox Pro <onboarding@resend.dev>",
-      to: "iatsam@gmail.com",
+      to: ADMIN_EMAIL,
       subject: `${catLabel} — Vox Pro 用戶回饋（${email}）`,
       html: `
         <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
@@ -47,7 +48,7 @@ export async function POST(request: Request) {
     });
 
     return NextResponse.json({ success: true });
-  } catch (error: any) {
+  } catch (error) {
     console.error("Feedback email error:", error);
     return NextResponse.json(
       { error: "發送失敗，請稍後再試" },

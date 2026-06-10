@@ -17,7 +17,9 @@ export const PRO_LIFETIME_ID = "prod_2irVh0YPj5k66pzbPzuwRH";
 export const PAID_PRODUCT_IDS = new Set([PRO_MONTHLY_ID, PRO_LIFETIME_ID]);
 
 /** Map product → tier */
-export function getTierForProduct(productId: string): "pro" | "lifetime" | null {
+export function getTierForProduct(
+  productId: string | undefined,
+): "pro" | "lifetime" | null {
   if (productId === PRO_MONTHLY_ID) return "pro";
   if (productId === PRO_LIFETIME_ID) return "lifetime";
   return null;

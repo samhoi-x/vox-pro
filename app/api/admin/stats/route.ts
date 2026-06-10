@@ -1,14 +1,26 @@
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/server";
+import { requireAdmin, fetchAllAuthEmails } from "@/lib/admin";
+import { isTrialExpired } from "@/lib/trial";
+
+interface ProfileRow {
+  id: string;
+  subscription_tier: string;
+  trial_started_at: string | null;
+  created_at: string | null;
+}
 
 // GET /api/admin/stats — aggregate dashboard statistics
 export async function GET() {
+  if (!(await requireAdmin())) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
   const supabase = createServiceClient();
 
-  // Get all profiles
   const { data: profiles, error } = await supabase
     .from("profiles")
-    .select("*");
+    .select("id, subscription_tier, trial_started_at, created_at");
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
@@ -20,21 +32,18 @@ export async function GET() {
   const tierCounts = { free: 0, pro: 0, lifetime: 0 };
   let trialActive = 0;
   let trialExpired = 0;
-  const recentSignups: any[] = [];
+  const recentSignups: { id: string; tier: string; created_at: string }[] = [];
 
-  for (const p of profiles || []) {
+  for (const p of (profiles || []) as ProfileRow[]) {
     tierCounts[p.subscription_tier as keyof typeof tierCounts] =
       (tierCounts[p.subscription_tier as keyof typeof tierCounts] || 0) + 1;
 
     // Trial status
     if (p.trial_started_at && p.subscription_tier === "free") {
-      const trialEnd = new Date(
-        new Date(p.trial_started_at).getTime() + 72 * 60 * 60 * 1000,
-      );
-      if (now < trialEnd) {
-        trialActive++;
-      } else {
+      if (isTrialExpired(p.trial_started_at)) {
         trialExpired++;
+      } else {
+        trialActive++;
       }
     }
 
@@ -52,17 +61,8 @@ export async function GET() {
     }
   }
 
-  // Get auth users for email mapping
-  const userIds = profiles?.map((p) => p.id) || [];
-  let emails: Record<string, string> = {};
-  if (userIds.length > 0) {
-    const { data: authUsers } = await supabase.auth.admin.listUsers({ perPage: 100 });
-    if (authUsers?.users) {
-      for (const u of authUsers.users) {
-        emails[u.id] = u.email || "unknown";
-      }
-    }
-  }
+  const emails =
+    profiles && profiles.length > 0 ? await fetchAllAuthEmails(supabase) : {};
 
   // Top recent users with email
   const topRecent = recentSignups.slice(0, 10).map((u) => ({
@@ -77,11 +77,11 @@ export async function GET() {
     trialExpired,
     recentSignups: topRecent,
     // Daily signup trend (last 7 days)
-    dailySignups: getDailySignups(profiles || [], now),
+    dailySignups: getDailySignups((profiles || []) as ProfileRow[], now),
   });
 }
 
-function getDailySignups(profiles: any[], now: Date) {
+function getDailySignups(profiles: ProfileRow[], now: Date) {
   const days: Record<string, number> = {};
   for (let i = 6; i >= 0; i--) {
     const d = new Date(now);

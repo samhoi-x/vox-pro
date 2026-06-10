@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useAuth } from "@/components/AuthProvider";
 import { getDayContent, GOLDEN_RULES } from "@/lib/content";
 import type { DayContent } from "@/lib/content";
+import { TRIAL_HOURS, getTrialEnd } from "@/lib/trial";
 import DaySelector from "@/components/DaySelector";
 import Timer from "@/components/Timer";
 import PianoScale from "@/components/PianoScale";
@@ -26,8 +27,9 @@ export default function DashboardPage() {
   const [toggling, setToggling] = useState(false);
   const [warmupModal, setWarmupModal] = useState<{ label: string; url: string; embedId: string | null } | null>(null);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
-  // Re-render every 60s to update trial countdown
-  const [, setTick] = useState(0);
+  const [billingError, setBillingError] = useState<string | null>(null);
+  // Refreshed every 60s so the trial countdown stays current
+  const [now, setNow] = useState(() => Date.now());
 
   // ── Load progress + subscription on mount ──────────────────────
   useEffect(() => {
@@ -41,7 +43,7 @@ export default function DashboardPage() {
           supabase.from("progress").select("day").eq("user_id", user!.id),
           supabase
             .from("profiles")
-            .select("subscription_tier")
+            .select("subscription_tier, trial_started_at")
             .eq("id", user!.id)
             .maybeSingle(),
         ]);
@@ -54,66 +56,51 @@ export default function DashboardPage() {
           );
         }
 
-        if (profileRes.data?.subscription_tier) {
-          setSubscriptionTier(profileRes.data.subscription_tier);
-        }
-
         // ── Trial tracking: DB-primary, localStorage-fallback ──
-        // Tries to read trial_started_at from DB first; if column doesn't exist
-        // yet (400 error), falls back to localStorage. Syncs localStorage → DB
-        // on first successful DB read so existing trials migrate seamlessly.
-        const LS_KEY = `vox_trial_started_${user!.id}`;
-        let trialTime: string | null = null;
-        let dbAvailable = false;
+        // trial_started_at comes back with the profile query; if that column
+        // doesn't exist yet (migration not applied), the whole select fails,
+        // so retry without it and fall back to localStorage-only tracking.
+        let profile = profileRes.data as
+          | { subscription_tier: string | null; trial_started_at?: string | null }
+          | null;
+        const dbAvailable = !profileRes.error;
 
-        // 1) Try DB (may fail if migration not applied yet)
-        try {
-          const { data: trialData, error: trialErr } = await supabase
+        if (profileRes.error) {
+          const { data } = await supabase
             .from("profiles")
-            .select("trial_started_at")
+            .select("subscription_tier")
             .eq("id", user!.id)
             .maybeSingle();
-
-          if (!trialErr && trialData) {
-            dbAvailable = true;
-            if (trialData.trial_started_at) {
-              trialTime = trialData.trial_started_at;
-              // Sync DB → localStorage
-              localStorage.setItem(LS_KEY, trialData.trial_started_at);
-            }
-          }
-        } catch {
-          // Column doesn't exist — DB unavailable, use localStorage only
+          if (cancelled) return;
+          profile = data;
         }
 
-        // 2) Fall back to localStorage
-        if (!trialTime) {
-          const stored = localStorage.getItem(LS_KEY);
-          if (stored) {
-            trialTime = stored;
-            // If DB just became available, sync localStorage → DB
-            if (dbAvailable) {
-              supabase
-                .from("profiles")
-                .update({ trial_started_at: stored })
-                .eq("id", user!.id)
-                .then(({ error }) => {
-                  if (error) console.warn("trial sync → DB failed:", error.message);
-                });
-            }
-          } else {
-            // First-ever access
+        if (profile?.subscription_tier) {
+          setSubscriptionTier(profile.subscription_tier);
+        }
+
+        const LS_KEY = `vox_trial_started_${user!.id}`;
+        let trialTime: string | null = profile?.trial_started_at ?? null;
+
+        if (trialTime) {
+          // Sync DB → localStorage
+          localStorage.setItem(LS_KEY, trialTime);
+        } else {
+          // Fall back to localStorage, or start the trial on first-ever access
+          trialTime = localStorage.getItem(LS_KEY);
+          if (!trialTime) {
             trialTime = new Date().toISOString();
             localStorage.setItem(LS_KEY, trialTime);
-            if (dbAvailable) {
-              supabase
-                .from("profiles")
-                .update({ trial_started_at: trialTime })
-                .eq("id", user!.id)
-                .then(({ error }) => {
-                  if (error) console.warn("trial save → DB failed:", error.message);
-                });
-            }
+          }
+          // Sync localStorage → DB so existing trials migrate seamlessly
+          if (dbAvailable) {
+            supabase
+              .from("profiles")
+              .update({ trial_started_at: trialTime })
+              .eq("id", user!.id)
+              .then(({ error }) => {
+                if (error) console.warn("trial sync → DB failed:", error.message);
+              });
           }
         }
 
@@ -131,10 +118,45 @@ export default function DashboardPage() {
     };
   }, [user, supabase]);
 
-  // ── Tick every second to update trial countdown live ─────────────
+  // ── Tick every minute to update trial countdown (UI shows minutes) ──
   useEffect(() => {
-    const id = setInterval(() => setTick((t) => t + 1), 1000);
+    const id = setInterval(() => setNow(Date.now()), 60_000);
     return () => clearInterval(id);
+  }, []);
+
+  // ── Checkout / billing portal redirects ─────────────────────────
+  const handleCheckout = useCallback(async (productId: string) => {
+    setBillingError(null);
+    try {
+      const res = await fetch("/api/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ productId }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.url) {
+        window.location.href = data.url;
+      } else {
+        setBillingError(data.error || "結帳連結生成失敗，請稍後再試");
+      }
+    } catch {
+      setBillingError("網絡連接失敗，請稍後再試");
+    }
+  }, []);
+
+  const handleBillingPortal = useCallback(async () => {
+    setBillingError(null);
+    try {
+      const res = await fetch("/api/billing", { method: "POST" });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.url) {
+        window.location.href = data.url;
+      } else {
+        setBillingError(data.error || "無法開啟訂閱管理，請稍後再試");
+      }
+    } catch {
+      setBillingError("網絡連接失敗，請稍後再試");
+    }
   }, []);
 
   // ── Toggle day completion (upsert / delete) ────────────────────
@@ -174,17 +196,13 @@ export default function DashboardPage() {
   const dayContent: DayContent | undefined = getDayContent(activeDay);
   const isFreeUser = subscriptionTier === "free";
   const isLifetime = subscriptionTier === "lifetime";
-  const isPro = subscriptionTier === "pro";
   // Time-based trial: 3 days (72 hours) from first dashboard access
-  const TRIAL_HOURS = 72;
-  const trialEnd = trialStartedAt
-    ? new Date(new Date(trialStartedAt).getTime() + TRIAL_HOURS * 60 * 60 * 1000)
-    : null;
-  const trialExpired = trialEnd ? new Date() > trialEnd : false;
+  const trialEnd = trialStartedAt ? getTrialEnd(trialStartedAt) : null;
+  const trialExpired = trialEnd ? now > trialEnd.getTime() : false;
   const showPaywall = isFreeUser && trialExpired;
   // Precise countdown: total minutes left, then break into D/H/M
   const trialMinutesLeft = trialEnd
-    ? Math.max(0, Math.floor((trialEnd.getTime() - Date.now()) / (1000 * 60)))
+    ? Math.max(0, Math.floor((trialEnd.getTime() - now) / (1000 * 60)))
     : TRIAL_HOURS * 60;
   const trialDays = Math.floor(trialMinutesLeft / (24 * 60));
   const trialHours = Math.floor((trialMinutesLeft % (24 * 60)) / 60);
@@ -288,17 +306,9 @@ export default function DashboardPage() {
             <div className="flex items-center gap-2">
               <a
                 href="/api/checkout"
-                onClick={async (e) => {
+                onClick={(e) => {
                   e.preventDefault();
-                  try {
-                    const res = await fetch("/api/checkout", {
-                      method: "POST",
-                      headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({ productId: "prod_2U68pglTbt7SworqPvcyuz" }),
-                    });
-                    const data = await res.json();
-                    if (data.url) window.location.href = data.url;
-                  } catch {}
+                  handleCheckout("prod_2U68pglTbt7SworqPvcyuz");
                 }}
                 className="text-xs bg-[var(--accent-glow)] text-white px-4 py-1.5 rounded-full font-bold hover:brightness-110 transition-all shrink-0"
               >
@@ -306,23 +316,18 @@ export default function DashboardPage() {
               </a>
               <a
                 href="/api/checkout"
-                onClick={async (e) => {
+                onClick={(e) => {
                   e.preventDefault();
-                  try {
-                    const res = await fetch("/api/checkout", {
-                      method: "POST",
-                      headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({ productId: "prod_2irVh0YPj5k66pzbPzuwRH" }),
-                    });
-                    const data = await res.json();
-                    if (data.url) window.location.href = data.url;
-                  } catch {}
+                  handleCheckout("prod_2irVh0YPj5k66pzbPzuwRH");
                 }}
                 className="text-xs bg-purple-600 text-white px-4 py-1.5 rounded-full font-bold hover:bg-purple-500 transition-all shrink-0"
               >
                 永久 $19.99
               </a>
             </div>
+            {billingError && (
+              <p className="w-full text-xs text-[var(--danger)]">{billingError}</p>
+            )}
           </div>
         ) : isLifetime ? (
           <div className="bg-amber-600/10 border border-amber-600/30 rounded-xl px-4 py-3 flex items-center justify-between gap-3 flex-wrap">
@@ -344,17 +349,14 @@ export default function DashboardPage() {
               <span className="text-purple-300">Pro 會員 — 已解鎖全部 18 天課程</span>
             </div>
             <button
-              onClick={async () => {
-                try {
-                  const res = await fetch("/api/billing", { method: "POST" });
-                  const data = await res.json();
-                  if (data.url) window.location.href = data.url;
-                } catch {}
-              }}
+              onClick={handleBillingPortal}
               className="text-xs bg-purple-600/30 text-purple-300 border border-purple-600/40 px-4 py-1.5 rounded-full font-bold hover:bg-purple-600/40 transition-all shrink-0"
             >
               管理訂閱
             </button>
+            {billingError && (
+              <p className="w-full text-xs text-[var(--danger)]">{billingError}</p>
+            )}
           </div>
         )}
 
