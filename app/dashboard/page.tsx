@@ -338,9 +338,23 @@ export default function DashboardPage() {
             </a>
           </div>
         ) : (
-          <div className="bg-purple-600/10 border border-purple-600/30 rounded-xl px-4 py-3 flex items-center gap-2 text-sm">
-            <span>⭐</span>
-            <span className="text-purple-300">Pro 會員 — 已解鎖全部 18 天課程</span>
+          <div className="bg-purple-600/10 border border-purple-600/30 rounded-xl px-4 py-3 flex items-center justify-between gap-3 flex-wrap">
+            <div className="flex items-center gap-2 text-sm">
+              <span>⭐</span>
+              <span className="text-purple-300">Pro 會員 — 已解鎖全部 18 天課程</span>
+            </div>
+            <button
+              onClick={async () => {
+                try {
+                  const res = await fetch("/api/billing", { method: "POST" });
+                  const data = await res.json();
+                  if (data.url) window.location.href = data.url;
+                } catch {}
+              }}
+              className="text-xs bg-purple-600/30 text-purple-300 border border-purple-600/40 px-4 py-1.5 rounded-full font-bold hover:bg-purple-600/40 transition-all shrink-0"
+            >
+              管理訂閱
+            </button>
           </div>
         )}
 
