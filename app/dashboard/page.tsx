@@ -107,9 +107,9 @@ export default function DashboardPage() {
     };
   }, [user, supabase]);
 
-  // ── Tick every 60s to update trial countdown live ────────────────
+  // ── Tick every second to update trial countdown live ─────────────
   useEffect(() => {
-    const id = setInterval(() => setTick((t) => t + 1), 60_000);
+    const id = setInterval(() => setTick((t) => t + 1), 1000);
     return () => clearInterval(id);
   }, []);
 
@@ -158,9 +158,13 @@ export default function DashboardPage() {
     : null;
   const trialExpired = trialEnd ? new Date() > trialEnd : false;
   const showPaywall = isFreeUser && trialExpired;
-  const trialHoursLeft = trialEnd
-    ? Math.max(0, Math.ceil((trialEnd.getTime() - Date.now()) / (1000 * 60 * 60)))
-    : TRIAL_HOURS;
+  // Precise countdown: total minutes left, then break into D/H/M
+  const trialMinutesLeft = trialEnd
+    ? Math.max(0, Math.floor((trialEnd.getTime() - Date.now()) / (1000 * 60)))
+    : TRIAL_HOURS * 60;
+  const trialDays = Math.floor(trialMinutesLeft / (24 * 60));
+  const trialHours = Math.floor((trialMinutesLeft % (24 * 60)) / 60);
+  const trialMins = trialMinutesLeft % 60;
   const isTodayCompleted = completedDays.includes(activeDay);
   const phaseClass = dayContent ? `phase-${dayContent.phase}` : "";
 
@@ -248,7 +252,9 @@ export default function DashboardPage() {
                 <span>
                   免費試用：<strong className="text-[var(--text)]">全部 18 日內容</strong> 自由體驗 ·{" "}
                   <span className="text-xs text-[var(--accent)]">
-                    尚餘 {Math.floor(trialHoursLeft / 24)} 日 {trialHoursLeft % 24} 小時
+                    尚餘{" "}
+                    {trialDays > 0 && <>{trialDays} 日 </>}
+                    {trialHours} 小時 {trialMins} 分
                   </span>
                 </span>
               ) : (
