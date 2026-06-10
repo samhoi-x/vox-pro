@@ -11,16 +11,21 @@ export default function PdfDownloadPage() {
 
   useEffect(() => {
     if (!user) return;
-    supabase
-      .from("profiles")
-      .select("subscription_tier")
-      .eq("id", user.id)
-      .single()
-      .then(({ data }) => {
+    async function checkTier() {
+      try {
+        const { data } = await supabase
+          .from("profiles")
+          .select("subscription_tier")
+          .eq("id", user!.id)
+          .single();
         setTier(data?.subscription_tier || "free");
+      } catch {
+        setTier("free");
+      } finally {
         setChecking(false);
-      })
-      .catch(() => setChecking(false));
+      }
+    }
+    checkTier();
   }, [user, supabase]);
 
   // Trigger print on load for lifetime users
