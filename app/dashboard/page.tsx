@@ -25,6 +25,8 @@ export default function DashboardPage() {
   const [toggling, setToggling] = useState(false);
   const [warmupModal, setWarmupModal] = useState<{ label: string; url: string; embedId: string | null } | null>(null);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
+  // Re-render every 60s to update trial countdown
+  const [, setTick] = useState(0);
 
   // ── Load progress + subscription on mount ──────────────────────
   useEffect(() => {
@@ -84,6 +86,12 @@ export default function DashboardPage() {
       cancelled = true;
     };
   }, [user, supabase]);
+
+  // ── Tick every 60s to update trial countdown live ────────────────
+  useEffect(() => {
+    const id = setInterval(() => setTick((t) => t + 1), 60_000);
+    return () => clearInterval(id);
+  }, []);
 
   // ── Toggle day completion (upsert / delete) ────────────────────
   const toggleDayComplete = useCallback(
