@@ -164,13 +164,13 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Pricing — 一次性買斷 */}
+      {/* Pricing — 兩種方案 */}
       <section className="max-w-3xl mx-auto px-4 pb-16">
         <h2 className="text-2xl font-bold text-center mb-2">
-          簡單定價，一次性
+          簡單定價，兩種方案
         </h2>
         <p className="text-sm text-gray-500 text-center mb-8">
-          冇月費、冇 hidden fee、買一次永久使用
+          月費隨時取消 · 永久買斷送 PDF
         </p>
         <div className="flex flex-col md:flex-row gap-6 justify-center">
           {/* Free tier */}
@@ -192,31 +192,54 @@ export default function LandingPage() {
             </Link>
           </div>
 
-          {/* One-time purchase */}
-          <div className="bg-[#1a1a24] border border-purple-600 rounded-xl p-8 flex-1 max-w-sm mx-auto relative">
-            <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-purple-600 text-white text-xs font-bold px-4 py-1 rounded-full">
-              一次性買斷
-            </div>
-            <h3 className="text-lg font-bold mb-2">完整版</h3>
+          {/* Monthly subscription */}
+          <div className="bg-[#1a1a24] border border-purple-600/30 rounded-xl p-8 flex-1 max-w-sm mx-auto">
+            <h3 className="text-lg font-bold mb-2">每月訂閱</h3>
             <p className="text-4xl font-black mb-1">
               $9.99
             </p>
-            <p className="text-xs text-gray-500 mb-4">一次性付款 · 永久解鎖 · 冇月費</p>
+            <p className="text-xs text-gray-500 mb-4">/月 · 隨時取消 · 無合約</p>
+            <ul className="text-sm text-gray-400 space-y-2 mb-6">
+              <li>✅ 全部 18 天完整課程</li>
+              <li>✅ 5 個階段系統訓練</li>
+              <li>✅ 語音指導 + 示範影片</li>
+              <li>✅ 雲端進度同步</li>
+              <li>✅ 訂閱期內無限使用</li>
+            </ul>
+            <Link
+              href="/login"
+              className="block w-full py-3 bg-[var(--accent-glow)] text-white rounded-lg font-bold hover:brightness-110 transition-colors text-center"
+            >
+              以 $9.99/月 解鎖
+            </Link>
+          </div>
+
+          {/* Lifetime purchase */}
+          <div className="bg-[#1a1a24] border border-purple-600 rounded-xl p-8 flex-1 max-w-sm mx-auto relative">
+            <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-purple-600 text-white text-xs font-bold px-4 py-1 rounded-full">
+              最抵 👍
+            </div>
+            <h3 className="text-lg font-bold mb-2">永久買斷</h3>
+            <p className="text-4xl font-black mb-1">
+              $19.99
+            </p>
+            <p className="text-xs text-gray-500 mb-4">一次性付款 · 終身使用 · 送 PDF</p>
             <ul className="text-sm text-gray-400 space-y-2 mb-6">
               <li>✅ 全部 18 天完整課程</li>
               <li>✅ 5 個階段系統訓練</li>
               <li>✅ 語音指導 + 示範影片</li>
               <li>✅ 雲端進度同步</li>
               <li>✅ 終身訪問權限</li>
+              <li>🎁 送 18 天練習電子版 PDF</li>
             </ul>
             <Link
               href="/login"
               className="block w-full py-3 bg-purple-600 text-white rounded-lg font-bold hover:bg-purple-500 transition-colors text-center"
             >
-              以 $9.99 解鎖全部
+              以 $19.99 永久解鎖
             </Link>
             <p className="text-xs text-gray-600 text-center mt-3">
-              相等於一堂傳統聲樂堂嘅一半價錢以下
+              相等於一堂傳統聲樂堂嘅價錢
             </p>
           </div>
         </div>
@@ -228,7 +251,7 @@ export default function LandingPage() {
           與其花 $100+ 上幾堂零散嘅課
         </h2>
         <p className="text-gray-400 mb-8">
-          不如用 $9.99，18 天內系統性地打好歌唱基礎
+          不如用 $9.99/月 或 $19.99 永久買斷，18 天內系統性地打好歌唱基礎
         </p>
         <Link
           href="/login"

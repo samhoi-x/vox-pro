@@ -121,6 +121,8 @@ export default function DashboardPage() {
   // ── Derived data ───────────────────────────────────────────────
   const dayContent: DayContent | undefined = getDayContent(activeDay);
   const isFreeUser = subscriptionTier === "free";
+  const isLifetime = subscriptionTier === "lifetime";
+  const isPro = subscriptionTier === "pro";
   // Time-based trial: 3 days (72 hours) from first dashboard access
   const TRIAL_HOURS = 72;
   const trialEnd = trialStartedAt
@@ -179,6 +181,10 @@ export default function DashboardPage() {
               <span className="text-xs bg-[var(--surface)] border border-[var(--border)] text-[var(--text-muted)] px-2.5 py-1 rounded-full">
                 🆓 免費試用
               </span>
+            ) : isLifetime ? (
+              <span className="text-xs bg-amber-600/20 border border-amber-600/40 text-amber-300 px-2.5 py-1 rounded-full">
+                👑 永久
+              </span>
             ) : (
               <span className="text-xs bg-purple-600/20 border border-purple-600 text-purple-300 px-2.5 py-1 rounded-full">
                 ⭐ Pro
@@ -205,7 +211,7 @@ export default function DashboardPage() {
           </div>
         </header>
 
-        {/* Trial / Pro status banner */}
+        {/* Trial / Pro / Lifetime status banner */}
         {isFreeUser ? (
           <div className="bg-[var(--surface)] border border-[var(--border)] rounded-xl px-4 py-3 flex items-center justify-between gap-3 flex-wrap">
             <div className="flex items-center gap-2 text-sm text-[var(--text-muted)]">
@@ -218,22 +224,59 @@ export default function DashboardPage() {
                   </span>
                 </span>
               ) : (
-                <span>免費試用已結束 — 升級 Pro 繼續練習</span>
+                <span>免費試用已結束 — 選擇方案繼續練習</span>
               )}
             </div>
+            <div className="flex items-center gap-2">
+              <a
+                href="/api/checkout"
+                onClick={async (e) => {
+                  e.preventDefault();
+                  try {
+                    const res = await fetch("/api/checkout", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ productId: "prod_2U68pglTbt7SworqPvcyuz" }),
+                    });
+                    const data = await res.json();
+                    if (data.url) window.location.href = data.url;
+                  } catch {}
+                }}
+                className="text-xs bg-[var(--accent-glow)] text-white px-4 py-1.5 rounded-full font-bold hover:brightness-110 transition-all shrink-0"
+              >
+                $9.99/月
+              </a>
+              <a
+                href="/api/checkout"
+                onClick={async (e) => {
+                  e.preventDefault();
+                  try {
+                    const res = await fetch("/api/checkout", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ productId: "prod_2irVh0YPj5k66pzbPzuwRH" }),
+                    });
+                    const data = await res.json();
+                    if (data.url) window.location.href = data.url;
+                  } catch {}
+                }}
+                className="text-xs bg-purple-600 text-white px-4 py-1.5 rounded-full font-bold hover:bg-purple-500 transition-all shrink-0"
+              >
+                永久 $19.99
+              </a>
+            </div>
+          </div>
+        ) : isLifetime ? (
+          <div className="bg-amber-600/10 border border-amber-600/30 rounded-xl px-4 py-3 flex items-center justify-between gap-3 flex-wrap">
+            <div className="flex items-center gap-2 text-sm">
+              <span>👑</span>
+              <span className="text-amber-300">永久會員 — 已解鎖全部 18 天課程</span>
+            </div>
             <a
-              href="/api/checkout"
-              onClick={async (e) => {
-                e.preventDefault();
-                try {
-                  const res = await fetch("/api/checkout", { method: "POST" });
-                  const data = await res.json();
-                  if (data.url) window.location.href = data.url;
-                } catch {}
-              }}
-              className="text-xs bg-[var(--accent-glow)] text-white px-4 py-1.5 rounded-full font-bold hover:brightness-110 transition-all shrink-0"
+              href="/pdf"
+              className="text-xs bg-amber-600/30 text-amber-300 border border-amber-600/40 px-4 py-1.5 rounded-full font-bold hover:bg-amber-600/40 transition-all shrink-0"
             >
-              升級 Pro
+              📥 下載練習 PDF
             </a>
           </div>
         ) : (

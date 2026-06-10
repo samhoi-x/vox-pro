@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/server";
 import { createHmac } from "crypto";
+import { PRO_LIFETIME_ID, getTierForProduct } from "@/lib/creem";
 
 function verifyCreemSignature(
   payload: string,
@@ -34,53 +35,65 @@ export async function POST(request: Request) {
   try {
     switch (event.type) {
       case "checkout.completed": {
-        // A checkout session was completed (one-time or subscription)
         const userId = event.data?.metadata?.user_id;
         const orderId = event.data?.order_id;
         const subscriptionId = event.data?.subscription_id;
+        const productId = event.data?.product_id || event.data?.metadata?.product_id;
+        const tier = getTierForProduct(productId);
 
-        if (userId && orderId) {
-          // If this is a subscription checkout
-          if (subscriptionId) {
-            const subData = event.data?.subscription;
-            await supabase.from("subscriptions").upsert({
-              user_id: userId,
-              creem_subscription_id: subscriptionId,
-              creem_product_id: event.data?.product_id,
-              status: "active",
-              current_period_start: subData?.current_period_start
-                ? new Date(subData.current_period_start).toISOString()
-                : new Date().toISOString(),
-              current_period_end: subData?.current_period_end
-                ? new Date(subData.current_period_end).toISOString()
-                : null,
-            });
+        if (!userId || !orderId) break;
 
-            await supabase
-              .from("profiles")
-              .update({ subscription_tier: "pro" })
-              .eq("id", userId);
-          }
+        // ── Subscription checkout (monthly pro) ──
+        if (subscriptionId) {
+          const subData = event.data?.subscription;
+          await supabase.from("subscriptions").upsert({
+            user_id: userId,
+            creem_subscription_id: subscriptionId,
+            creem_product_id: productId,
+            status: "active",
+            current_period_start: subData?.current_period_start
+              ? new Date(subData.current_period_start).toISOString()
+              : new Date().toISOString(),
+            current_period_end: subData?.current_period_end
+              ? new Date(subData.current_period_end).toISOString()
+              : null,
+          });
 
-          // Store the Creem order ID on the profile for reference
           await supabase
             .from("profiles")
-            .update({ creem_customer_id: event.data?.customer_id || null })
+            .update({ subscription_tier: tier || "pro" })
             .eq("id", userId);
         }
+
+        // ── One-time / lifetime checkout ──
+        if (!subscriptionId && tier === "lifetime") {
+          await supabase
+            .from("profiles")
+            .update({ subscription_tier: "lifetime" })
+            .eq("id", userId);
+        }
+
+        // Store Creem customer ID
+        await supabase
+          .from("profiles")
+          .update({ creem_customer_id: event.data?.customer_id || null })
+          .eq("id", userId);
+
         break;
       }
 
       case "subscription.active":
       case "subscription.paid": {
         const subscription = event.data;
+        if (!subscription?.id) break;
+
         const { data: sub } = await supabase
           .from("subscriptions")
           .select("user_id")
-          .eq("creem_subscription_id", subscription?.id)
+          .eq("creem_subscription_id", subscription.id)
           .single();
 
-        if (sub && subscription) {
+        if (sub) {
           await supabase
             .from("subscriptions")
             .update({
@@ -100,18 +113,29 @@ export async function POST(request: Request) {
       case "subscription.canceled":
       case "subscription.expired": {
         const subscription = event.data;
+        if (!subscription?.id) break;
+
         const { data: sub } = await supabase
           .from("subscriptions")
           .select("user_id")
-          .eq("creem_subscription_id", subscription?.id)
+          .eq("creem_subscription_id", subscription.id)
           .single();
 
-        if (sub) {
-          await supabase
-            .from("subscriptions")
-            .update({ status: "canceled" })
-            .eq("creem_subscription_id", subscription.id);
+        if (!sub) break;
 
+        await supabase
+          .from("subscriptions")
+          .update({ status: "canceled" })
+          .eq("creem_subscription_id", subscription.id);
+
+        // 🛡️ Never downgrade lifetime users
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("subscription_tier")
+          .eq("id", sub.user_id)
+          .single();
+
+        if (profile?.subscription_tier !== "lifetime") {
           await supabase
             .from("profiles")
             .update({ subscription_tier: "free" })
@@ -122,10 +146,12 @@ export async function POST(request: Request) {
 
       case "subscription.past_due": {
         const subscription = event.data;
+        if (!subscription?.id) break;
+
         await supabase
           .from("subscriptions")
           .update({ status: "past_due" })
-          .eq("creem_subscription_id", subscription?.id);
+          .eq("creem_subscription_id", subscription.id);
         break;
       }
     }
