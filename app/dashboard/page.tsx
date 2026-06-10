@@ -58,20 +58,40 @@ export default function DashboardPage() {
         }
 
         // Set trial start on first access (free users only)
+        // Uses localStorage as fallback so trial never resets on reload
         if (profileRes.data) {
+          const LS_KEY = `vox_trial_started_${user!.id}`;
+
           if (profileRes.data.trial_started_at) {
+            // DB has it — use it and sync to localStorage
             setTrialStartedAt(profileRes.data.trial_started_at);
+            localStorage.setItem(LS_KEY, profileRes.data.trial_started_at);
           } else if (profileRes.data.subscription_tier === "free" || !profileRes.data.subscription_tier) {
-            const now = new Date().toISOString();
-            setTrialStartedAt(now);
-            // Fire-and-forget: record trial start in DB
-            supabase
-              .from("profiles")
-              .update({ trial_started_at: now })
-              .eq("id", user!.id)
-              .then(({ error }) => {
-                if (error) console.error("Failed to set trial_started_at:", error);
-              });
+            // No trial in DB — check localStorage first
+            const stored = localStorage.getItem(LS_KEY);
+            if (stored) {
+              setTrialStartedAt(stored);
+              // Try to sync localStorage → DB (best-effort, column may not exist)
+              supabase
+                .from("profiles")
+                .update({ trial_started_at: stored })
+                .eq("id", user!.id)
+                .then(({ error }) => {
+                  if (error) console.warn("trial_started_at sync to DB failed (column may be missing):", error.message);
+                });
+            } else {
+              // First-ever access — record in both
+              const now = new Date().toISOString();
+              setTrialStartedAt(now);
+              localStorage.setItem(LS_KEY, now);
+              supabase
+                .from("profiles")
+                .update({ trial_started_at: now })
+                .eq("id", user!.id)
+                .then(({ error }) => {
+                  if (error) console.warn("trial_started_at DB write failed (column may be missing):", error.message);
+                });
+            }
           }
         }
       } catch (err) {
