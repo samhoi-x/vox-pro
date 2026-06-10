@@ -14,8 +14,12 @@ import Paywall from "@/components/Paywall";
 import VideoModal from "@/components/VideoModal";
 import FeedbackModal from "@/components/FeedbackModal";
 
+export const dynamic = "force-dynamic";
+
 export default function DashboardPage() {
   const { user, loading: authLoading, supabase } = useAuth();
+  // Debug: log build version to confirm JS is running
+  if (typeof window !== "undefined") console.log("🔧 Vox Pro Dashboard — trial-v3 — localStorage trial fix active");
 
   const [activeDay, setActiveDay] = useState(1);
   const [completedDays, setCompletedDays] = useState<number[]>([]);
@@ -197,6 +201,7 @@ export default function DashboardPage() {
   // ── RENDER ─────────────────────────────────────────────────────
   return (
     <div className="min-h-screen bg-[var(--bg)]">
+      {/* BUILD: c189bc0 + trial-v3 — hard-refresh if stale */}
       <div className="max-w-[720px] mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6">
         {/* ========================================================
             HEADER: title + toolbar
