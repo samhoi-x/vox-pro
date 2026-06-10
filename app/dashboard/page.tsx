@@ -39,7 +39,6 @@ export default function DashboardPage() {
       try {
         const [progressRes, profileRes] = await Promise.all([
           supabase.from("progress").select("day").eq("user_id", user!.id),
-          // NOTE: trial_started_at column may not exist in DB — query without it
           supabase
             .from("profiles")
             .select("subscription_tier")
@@ -59,19 +58,66 @@ export default function DashboardPage() {
           setSubscriptionTier(profileRes.data.subscription_tier);
         }
 
-        // Trial tracking: PURELY localStorage-based (DB column may not exist)
-        // This ensures trial never resets even if the DB migration hasn't been applied
+        // ── Trial tracking: DB-primary, localStorage-fallback ──
+        // Tries to read trial_started_at from DB first; if column doesn't exist
+        // yet (400 error), falls back to localStorage. Syncs localStorage → DB
+        // on first successful DB read so existing trials migrate seamlessly.
         const LS_KEY = `vox_trial_started_${user!.id}`;
-        const stored = localStorage.getItem(LS_KEY);
+        let trialTime: string | null = null;
+        let dbAvailable = false;
 
-        if (stored) {
-          setTrialStartedAt(stored);
-        } else {
-          // First-ever access — store now in localStorage
-          const now = new Date().toISOString();
-          setTrialStartedAt(now);
-          localStorage.setItem(LS_KEY, now);
+        // 1) Try DB (may fail if migration not applied yet)
+        try {
+          const { data: trialData, error: trialErr } = await supabase
+            .from("profiles")
+            .select("trial_started_at")
+            .eq("id", user!.id)
+            .maybeSingle();
+
+          if (!trialErr && trialData) {
+            dbAvailable = true;
+            if (trialData.trial_started_at) {
+              trialTime = trialData.trial_started_at;
+              // Sync DB → localStorage
+              localStorage.setItem(LS_KEY, trialData.trial_started_at);
+            }
+          }
+        } catch {
+          // Column doesn't exist — DB unavailable, use localStorage only
         }
+
+        // 2) Fall back to localStorage
+        if (!trialTime) {
+          const stored = localStorage.getItem(LS_KEY);
+          if (stored) {
+            trialTime = stored;
+            // If DB just became available, sync localStorage → DB
+            if (dbAvailable) {
+              supabase
+                .from("profiles")
+                .update({ trial_started_at: stored })
+                .eq("id", user!.id)
+                .then(({ error }) => {
+                  if (error) console.warn("trial sync → DB failed:", error.message);
+                });
+            }
+          } else {
+            // First-ever access
+            trialTime = new Date().toISOString();
+            localStorage.setItem(LS_KEY, trialTime);
+            if (dbAvailable) {
+              supabase
+                .from("profiles")
+                .update({ trial_started_at: trialTime })
+                .eq("id", user!.id)
+                .then(({ error }) => {
+                  if (error) console.warn("trial save → DB failed:", error.message);
+                });
+            }
+          }
+        }
+
+        setTrialStartedAt(trialTime);
       } catch (err) {
         console.error("Failed to load dashboard data:", err);
       } finally {
