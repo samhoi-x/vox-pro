@@ -265,8 +265,24 @@ export default function LandingPage() {
       </section>
 
       {/* Footer */}
-      <footer className="text-center py-8 text-sm text-gray-600 border-t border-[#1a1a24]">
-        © 2026 Vox Pro. Built for singers who want a real foundation.
+      <footer className="py-8 text-sm text-gray-600 border-t border-[#1a1a24]">
+        <div className="max-w-3xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <span>© 2026 Vox Pro</span>
+          <nav className="flex gap-6">
+            <Link
+              href="/privacy"
+              className="hover:text-purple-400 transition-colors"
+            >
+              私隱政策
+            </Link>
+            <Link
+              href="/terms"
+              className="hover:text-purple-400 transition-colors"
+            >
+              服務條款
+            </Link>
+          </nav>
+        </div>
       </footer>
     </div>
   );
