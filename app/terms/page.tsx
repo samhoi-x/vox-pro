@@ -216,7 +216,7 @@ export default function TermsPage() {
           <section>
             <h2 className="text-xl font-bold text-white mt-10 mb-4">13. 管轄法律</h2>
             <p>
-              本條款受澳門特別行政區法律管轄，並按其解釋。因本條款引起嘅爭議，
+              本條款受香港特別行政區法律管轄，並按其解釋。因本條款引起嘅爭議，
               雙方應先嘗試友好協商解決。
             </p>
           </section>
