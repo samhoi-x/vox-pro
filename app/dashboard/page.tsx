@@ -21,6 +21,7 @@ export default function DashboardPage() {
   const [activeDay, setActiveDay] = useState(1);
   const [completedDays, setCompletedDays] = useState<number[]>([]);
   const [subscriptionTier, setSubscriptionTier] = useState<string>("free");
+  const [hasCreemSubscription, setHasCreemSubscription] = useState(false);
   const [trialStartedAt, setTrialStartedAt] = useState<string | null>(null);
   const [dataLoading, setDataLoading] = useState(true);
   const [toggling, setToggling] = useState(false);
@@ -41,7 +42,7 @@ export default function DashboardPage() {
           supabase.from("progress").select("day").eq("user_id", user!.id),
           supabase
             .from("profiles")
-            .select("subscription_tier")
+            .select("subscription_tier, creem_customer_id")
             .eq("id", user!.id)
             .maybeSingle(),
         ]);
@@ -56,6 +57,7 @@ export default function DashboardPage() {
 
         if (profileRes.data?.subscription_tier) {
           setSubscriptionTier(profileRes.data.subscription_tier);
+          setHasCreemSubscription(!!profileRes.data.creem_customer_id);
         }
 
         // ── Trial tracking: DB-primary, localStorage-fallback ──
@@ -337,7 +339,7 @@ export default function DashboardPage() {
               📥 下載練習 PDF
             </a>
           </div>
-        ) : (
+        ) : subscriptionTier === "pro" && hasCreemSubscription ? (
           <div className="bg-purple-600/10 border border-purple-600/30 rounded-xl px-4 py-3 flex items-center justify-between gap-3 flex-wrap">
             <div className="flex items-center gap-2 text-sm">
               <span>⭐</span>
@@ -349,14 +351,20 @@ export default function DashboardPage() {
                   const res = await fetch("/api/billing", { method: "POST" });
                   const data = await res.json();
                   if (data.url) window.location.href = data.url;
-                } catch {}
+                  else alert(data.error || "無法開啟管理頁面");
+                } catch { alert("網絡錯誤，請稍後再試"); }
               }}
               className="text-xs bg-purple-600/30 text-purple-300 border border-purple-600/40 px-4 py-1.5 rounded-full font-bold hover:bg-purple-600/40 transition-all shrink-0"
             >
               管理訂閱
             </button>
           </div>
-        )}
+        ) : subscriptionTier === "pro" && !hasCreemSubscription ? (
+          <div className="bg-purple-600/10 border border-purple-600/30 rounded-xl px-4 py-3 flex items-center gap-2 text-sm">
+            <span>⭐</span>
+            <span className="text-purple-300">管理員授權 Pro — 不會自動續訂，無需取消</span>
+          </div>
+        ) : null}
 
         {/* ========================================================
             DAY SELECTOR

@@ -1,8 +1,18 @@
 import { NextResponse } from "next/server";
+import { createServerSupabase } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/server";
 
-// GET /api/admin/stats — aggregate dashboard statistics
+const ADMIN_EMAIL = "iatsam@gmail.com";
+
+// GET /api/admin/stats — aggregate dashboard statistics (admin only)
 export async function GET() {
+  // ── Auth guard ──
+  const authSupabase = await createServerSupabase();
+  const { data: { user } } = await authSupabase.auth.getUser();
+  if (!user || user.email !== ADMIN_EMAIL) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const supabase = createServiceClient();
 
   // Get all profiles
@@ -52,17 +62,8 @@ export async function GET() {
     }
   }
 
-  // Get auth users for email mapping
-  const userIds = profiles?.map((p) => p.id) || [];
-  let emails: Record<string, string> = {};
-  if (userIds.length > 0) {
-    const { data: authUsers } = await supabase.auth.admin.listUsers({ perPage: 100 });
-    if (authUsers?.users) {
-      for (const u of authUsers.users) {
-        emails[u.id] = u.email || "unknown";
-      }
-    }
-  }
+  // Get auth user emails — paginated to handle >100 users
+  const emails = await fetchAllAuthEmails(supabase);
 
   // Top recent users with email
   const topRecent = recentSignups.slice(0, 10).map((u) => ({
@@ -76,7 +77,6 @@ export async function GET() {
     trialActive,
     trialExpired,
     recentSignups: topRecent,
-    // Daily signup trend (last 7 days)
     dailySignups: getDailySignups(profiles || [], now),
   });
 }
@@ -99,4 +99,25 @@ function getDailySignups(profiles: any[], now: Date) {
   }
 
   return Object.entries(days).map(([date, count]) => ({ date, count }));
+}
+
+// Helper: fetch all auth user emails with pagination (handles >100 users)
+async function fetchAllAuthEmails(supabase: ReturnType<typeof createServiceClient>) {
+  const emails: Record<string, string> = {};
+  let page = 1;
+  const perPage = 100;
+
+  while (true) {
+    const { data } = await supabase.auth.admin.listUsers({ perPage, page });
+    if (!data?.users || data.users.length === 0) break;
+
+    for (const u of data.users) {
+      emails[u.id] = u.email || "unknown";
+    }
+
+    if (data.users.length < perPage) break;
+    page++;
+  }
+
+  return emails;
 }

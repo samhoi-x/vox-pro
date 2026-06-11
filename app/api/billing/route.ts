@@ -18,7 +18,10 @@ export async function POST() {
     .single();
 
   if (!profile?.creem_customer_id) {
-    return NextResponse.json({ error: "找不到付款記錄" }, { status: 404 });
+    return NextResponse.json(
+      { error: "此帳號由管理員手動授權 Pro，無 Creem 訂閱記錄。無需取消，不會自動續訂。" },
+      { status: 404 }
+    );
   }
 
   if (profile.subscription_tier !== "pro") {

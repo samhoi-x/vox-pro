@@ -1,8 +1,18 @@
 import { NextResponse } from "next/server";
+import { createServerSupabase } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/server";
 
-// GET /api/admin/users — list all users with profile data
+const ADMIN_EMAIL = "iatsam@gmail.com";
+
+// GET /api/admin/users — list all users with profile data (admin only)
 export async function GET() {
+  // ── Auth guard ──
+  const authSupabase = await createServerSupabase();
+  const { data: { user } } = await authSupabase.auth.getUser();
+  if (!user || user.email !== ADMIN_EMAIL) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const supabase = createServiceClient();
 
   const { data: profiles, error } = await supabase
@@ -14,20 +24,8 @@ export async function GET() {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  // Get auth user emails
-  const userIds = profiles?.map((p) => p.id) || [];
-  let emails: Record<string, string> = {};
-
-  if (userIds.length > 0) {
-    const { data: authUsers } = await supabase.auth.admin.listUsers({
-      perPage: 100,
-    });
-    if (authUsers?.users) {
-      for (const u of authUsers.users) {
-        emails[u.id] = u.email || "unknown";
-      }
-    }
-  }
+  // Get auth user emails — paginated to handle >100 users
+  const emails = await fetchAllAuthEmails(supabase);
 
   const users = profiles?.map((p) => ({
     id: p.id,
@@ -42,8 +40,15 @@ export async function GET() {
   return NextResponse.json({ users });
 }
 
-// PATCH /api/admin/users — update user subscription tier
+// PATCH /api/admin/users — update user subscription tier (admin only)
 export async function PATCH(request: Request) {
+  // ── Auth guard ──
+  const authSupabase = await createServerSupabase();
+  const { data: { user } } = await authSupabase.auth.getUser();
+  if (!user || user.email !== ADMIN_EMAIL) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const supabase = createServiceClient();
 
   let body: { userId: string; tier: string };
@@ -74,4 +79,25 @@ export async function PATCH(request: Request) {
   }
 
   return NextResponse.json({ success: true, userId, tier });
+}
+
+// Helper: fetch all auth user emails with pagination (handles >100 users)
+async function fetchAllAuthEmails(supabase: ReturnType<typeof createServiceClient>) {
+  const emails: Record<string, string> = {};
+  let page = 1;
+  const perPage = 100;
+
+  while (true) {
+    const { data } = await supabase.auth.admin.listUsers({ perPage, page });
+    if (!data?.users || data.users.length === 0) break;
+
+    for (const u of data.users) {
+      emails[u.id] = u.email || "unknown";
+    }
+
+    if (data.users.length < perPage) break;
+    page++;
+  }
+
+  return emails;
 }
