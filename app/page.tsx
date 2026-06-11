@@ -270,6 +270,12 @@ export default function LandingPage() {
           <span>© 2026 Vox Pro</span>
           <nav className="flex gap-6">
             <Link
+              href="/blog"
+              className="hover:text-purple-400 transition-colors"
+            >
+              教學文章
+            </Link>
+            <Link
               href="/privacy"
               className="hover:text-purple-400 transition-colors"
             >
