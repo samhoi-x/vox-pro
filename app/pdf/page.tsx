@@ -135,7 +135,7 @@ export default function PdfDownloadPage() {
               每日 20 分鐘 · 5 個階段 · 循序漸進
             </p>
             <p className="text-xs text-gray-600 mt-8">
-              Vox Pro · vox-pro-six.vercel.app
+              Vox Pro · vox-pro.tokencheap.net
             </p>
           </div>
 
@@ -252,7 +252,7 @@ export default function PdfDownloadPage() {
           {/* Footer */}
           <div className="text-center py-8 text-xs text-gray-600 border-t border-[#1a1a24] page-break">
             <p>Vox Pro © 2026</p>
-            <p>vox-pro-six.vercel.app</p>
+            <p>vox-pro.tokencheap.net</p>
             <p className="mt-2">此 PDF 僅供永久會員個人使用，請勿轉載或分享。</p>
           </div>
         </div>
