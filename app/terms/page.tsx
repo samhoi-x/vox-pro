@@ -109,7 +109,7 @@ export default function TermsPage() {
                 <li>
                   <strong className="text-purple-400">永久買斷</strong>
                   <br />
-                  購買後 7 日內可申請退款。退款請求請電郵至 iatsam@gmail.com，註明購買電郵同原因。
+                  購買後 7 日內可申請退款。退款請求請電郵至 support@tokencheap.net，註明購買電郵同原因。
                   退款處理通常需要 5–10 個工作日。
                 </li>
                 <li>
@@ -199,7 +199,7 @@ export default function TermsPage() {
             <h2 className="text-xl font-bold text-white mt-10 mb-4">11. 帳戶終止</h2>
             <p>
               我哋保留隨時因任何原因（包括違反本條款）暫停或終止你帳戶嘅權利，恕不退還已繳付費用。
-              你可以隨時透過電郵 iatsam@gmail.com 要求刪除帳戶。
+              你可以隨時透過電郵 support@tokencheap.net 要求刪除帳戶。
             </p>
           </section>
 
@@ -228,7 +228,7 @@ export default function TermsPage() {
               如果你對本服務條款有任何疑問，請聯絡：
             </p>
             <p className="mt-2">
-              📧 電郵：<span className="text-purple-400">iatsam@gmail.com</span>
+              📧 電郵：<span className="text-purple-400">support@tokencheap.net</span>
             </p>
           </section>
         </div>

@@ -130,7 +130,7 @@ export default function PrivacyPage() {
             <h2 className="text-xl font-bold text-white mt-10 mb-4">4. 資料保存</h2>
             <p>
               我哋會喺你嘅帳戶有效期間保存你嘅個人資料。如果你希望刪除帳戶同相關資料，請以註冊電郵發送請求至
-              <span className="text-purple-400"> iatsam@gmail.com</span>，
+              <span className="text-purple-400"> support@tokencheap.net</span>，
               我哋會喺 30 日內處理並確認。
             </p>
           </section>
@@ -157,7 +157,7 @@ export default function PrivacyPage() {
               </ul>
             </div>
             <p className="mt-4">
-              行使以上權利，請電郵至 <span className="text-purple-400">iatsam@gmail.com</span>。
+              行使以上權利，請電郵至 <span className="text-purple-400">support@tokencheap.net</span>。
             </p>
           </section>
 
@@ -177,7 +177,7 @@ export default function PrivacyPage() {
               如果你對本私隱政策有任何疑問，請聯絡：
             </p>
             <p className="mt-2">
-              📧 電郵：<span className="text-purple-400">iatsam@gmail.com</span>
+              📧 電郵：<span className="text-purple-400">support@tokencheap.net</span>
             </p>
           </section>
         </div>
