@@ -10,14 +10,22 @@ export default function ProgressGrid({ completedDays, onToggleDay }: Props) {
   const completedCount = completedDays.length;
   const percent = Math.round((completedCount / totalDays) * 100);
 
-  // Calculate consecutive days (from day 1)
+  // Calculate longest consecutive streak of completed days
+  // Sort completed days, then find the longest run
   let consecutiveDays = 0;
-  for (let i = 1; i <= totalDays; i++) {
-    if (completedDays.includes(i)) {
-      consecutiveDays++;
-    } else {
-      break;
+  if (completedDays.length > 0) {
+    const sorted = [...completedDays].sort((a, b) => a - b);
+    let currentStreak = 1;
+    let bestStreak = 1;
+    for (let i = 1; i < sorted.length; i++) {
+      if (sorted[i] === sorted[i - 1] + 1) {
+        currentStreak++;
+        bestStreak = Math.max(bestStreak, currentStreak);
+      } else {
+        currentStreak = 1;
+      }
     }
+    consecutiveDays = bestStreak;
   }
 
   return (
