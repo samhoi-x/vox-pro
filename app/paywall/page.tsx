@@ -104,6 +104,17 @@ export default function PaywallPage() {
                 {user.email}
               </span>
             ) : null}
+            {user && (
+              <button
+                onClick={async () => {
+                  await supabase.auth.signOut();
+                  window.location.href = "/";
+                }}
+                className="text-xs text-[var(--text-muted)] hover:text-[var(--danger)] border border-[var(--border)] hover:border-[var(--danger)] px-3 py-1.5 rounded-lg transition-colors"
+              >
+                登出
+              </button>
+            )}
             <ThemeToggle />
           </div>
         </header>
